@@ -1923,7 +1923,7 @@ function _mapFeed(arr){
     if(f.W!=null)r.wIn=f.W; if(f.D!=null)r.dIn=f.D; if(f.H!=null)r.heightIn=f.H;
     if(f.msrp!=null){ r.msrp=f.msrp; r.price=f.msrp; }
     if(f.finishes&&f.finishes.length)r.finishes=f.finishes;
-    if(f.image)r.photos=[f.image]; else if(!r.photos)r.photos=[];
+    var _gal=(f.gallery&&f.gallery.length)?f.gallery.filter(Boolean):[]; if(f.image)r.photos=[f.image].concat(_gal.filter(function(u){return u!==f.image;})); else if(_gal.length)r.photos=_gal; else if(!r.photos)r.photos=[];
     r.gk=b.gk||(typeof kind==="function"?kind(f.category||"",f.model||""):"prop");
     r.grp=b.grp||CAT2GRP[f.category]||"Decor";
     r.order_sku=f.order_sku||null; r.order_sku_type=f.order_sku_type||null; r.order_sku_status=f.order_sku_status||null;
