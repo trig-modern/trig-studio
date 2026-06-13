@@ -299,6 +299,7 @@
     <span class="go">Start building <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
    </div>
   </div>
+  <button class="homeportal" id="enterPortal">Trade designer? <b>Sign in to your portal</b> →</button>
  </div>
  <div class="foot">American Leather · BDI · Ethnicraft · Loll · and more</div>
  <button id="homeEditor" title="Internal vignette editor">✎ Editor</button>
@@ -342,6 +343,75 @@
 
 
 
+
+<div id="portal" class="gone">
+ <header id="ptbar">
+  <button id="ptBack">‹ Home</button>
+  <div class="ptbrand">Trig <small>Designer Portal</small></div>
+  <button id="ptSignOut" style="display:none">Sign out</button>
+ </header>
+ <div id="portalBody"></div>
+</div>
+
+<style id="portalCSS">
+#portal{position:fixed;inset:0;z-index:1200;background:var(--bg,#f5f5f7);display:flex;flex-direction:column;overflow:hidden;font-family:var(--font);}
+#portal.gone{display:none;}
+#ptbar{display:flex;align-items:center;gap:12px;padding:max(12px,env(safe-area-inset-top)) 18px 12px;border-bottom:1px solid var(--sep,rgba(60,60,67,.16));background:var(--glassfill,rgba(248,247,245,.82));backdrop-filter:blur(20px) saturate(1.6);position:sticky;top:0;z-index:5;}
+#ptBack{background:none;border:0;font:inherit;font-weight:600;color:var(--accent,#e0512f);cursor:pointer;padding:6px 2px;white-space:nowrap;}
+.ptbrand{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:-.01em;}
+.ptbrand small{font-weight:400;color:var(--muted,#86868b);}
+#ptSignOut{margin-left:auto;background:none;border:1px solid var(--line,#d2d2d7);border-radius:980px;padding:7px 15px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;}
+#ptSignOut:hover{background:rgba(0,0,0,.04);}
+#portalBody{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;}
+.pt-wrap{max-width:880px;margin:0 auto;padding:22px 18px 80px;}
+.pt-tabs{display:flex;gap:6px;background:rgba(118,118,128,.12);padding:4px;border-radius:12px;margin-bottom:22px;position:sticky;top:0;}
+.pt-tabs button{flex:1;border:0;background:none;font:inherit;font-size:14px;font-weight:560;color:var(--ink);padding:9px 10px;border-radius:9px;cursor:pointer;transition:.18s;}
+.pt-tabs button.on{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.pt-card{background:var(--panel,#fff);border:1px solid var(--hair,#e8e8ed);border-radius:16px;padding:18px;margin-bottom:14px;}
+.pt-card h2{font-family:var(--display);font-size:20px;margin:0 0 4px;}
+.pt-card h3{font-size:16px;margin:0 0 2px;font-weight:600;}
+.pt-sub{color:var(--muted,#86868b);font-size:13.5px;margin:0 0 16px;line-height:1.5;}
+.pt-row{display:flex;gap:10px;flex-wrap:wrap;}
+.pt-field{flex:1;min-width:180px;margin-bottom:12px;}
+.pt-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:560;}
+.pt-field input,.pt-field textarea{width:100%;border:1px solid var(--line,#d2d2d7);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink);}
+.pt-field textarea{min-height:74px;resize:vertical;}
+.pt-field input:focus,.pt-field textarea:focus{outline:none;border-color:var(--accent,#e0512f);}
+.pt-btn{border:1px solid var(--line,#d2d2d7);background:#fff;border-radius:980px;padding:9px 17px;font:inherit;font-size:14px;font-weight:560;color:var(--ink);cursor:pointer;transition:.18s;}
+.pt-btn:hover{background:rgba(0,0,0,.04);}
+.pt-btn.pri{background:var(--accent,#e0512f);border-color:var(--accent,#e0512f);color:#fff;}
+.pt-btn.pri:hover{background:var(--accent-deep,#c8431f);}
+.pt-btn.sm{padding:6px 12px;font-size:13px;}
+.pt-btn.danger{color:#c8371f;border-color:rgba(200,55,31,.4);}
+.pt-btn:disabled{opacity:.55;cursor:default;}
+.pt-login{display:flex;align-items:center;justify-content:center;min-height:62vh;padding:20px;}
+.pt-loginc{max-width:380px;width:100%;text-align:center;}
+.pt-loginc form{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+.pt-loginc input{border:1px solid var(--line);border-radius:11px;padding:12px 14px;font:inherit;font-size:15px;text-align:center;}
+.pt-loginc input:focus{outline:none;border-color:var(--accent);}
+.pt-msg{margin-top:12px;font-size:13px;min-height:18px;}
+.pt-msg .ok{color:#1a7f37;}
+.pt-msg .err{color:#c8371f;}
+.pt-empty{max-width:460px;margin:14vh auto;text-align:center;padding:20px;color:var(--muted);}
+.pt-empty h3{color:var(--ink);font-family:var(--display);font-size:20px;margin:0 0 8px;}
+.pt-empty p{font-size:14px;line-height:1.55;margin:0;}
+.pt-list{display:flex;flex-direction:column;gap:10px;}
+.pt-item{display:flex;align-items:center;gap:12px;background:var(--panel,#fff);border:1px solid var(--hair,#e8e8ed);border-radius:14px;padding:14px 16px;}
+.pt-item .pt-i-main{flex:1;min-width:0;}
+.pt-item .pt-i-name{font-weight:600;font-size:15px;}
+.pt-item .pt-i-meta{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.pt-item .pt-i-acts{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.pt-secttl{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:20px 2px 10px;}
+.pt-note{background:rgba(118,118,128,.07);border:1px solid var(--hair);border-radius:11px;padding:11px 13px;font-size:13.5px;line-height:1.5;margin-bottom:8px;}
+.pt-note .pt-note-d{font-size:11.5px;color:var(--muted);margin-top:5px;}
+.pt-bar{display:flex;gap:9px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.pt-bar .sp{flex:1;}
+.pt-link{background:none;border:0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:0;}
+@media(max-width:600px){ .pt-item{flex-direction:column;align-items:stretch;} .pt-item .pt-i-acts{justify-content:flex-start;} }
+.homeportal{margin-top:18px;background:none;border:0;color:rgba(255,255,255,.72);font:inherit;font-size:13.5px;cursor:pointer;opacity:0;animation:up .65s 1.45s forwards;transition:.2s;}
+.homeportal b{color:#ffae82;font-weight:600;}
+.homeportal:hover{color:#fff;}
+</style>
 
 <style id="studioGateCSS">
 :root{ --tint:#E0512F; --tint-press:#C8431F; --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif; --ease-std:cubic-bezier(.32,.72,0,1); }
@@ -1494,7 +1564,7 @@ function propSpec(p){ return {id:p.id,model:p.model,category:p.category,vendor:p
 function requestAdd(pc){ if(state.room){ if(state.tab!=="design")setTab("design"); placeAt(pc); if(isDocked()){ sheetOpen("Add a piece"); showPicker(); if(window.toast)toast("Added to room"); } else closeSheet(); }
  else { pendingAdd=pc; closeSheet(); enter("design"); } }   // no room yet -> prompt setup, then place
 function addProp(prod){ requestAdd({kind:"prop",spec:propSpec(prod)}); }
-function onConfigured(spec){ const eid=state.editId; state.editId=null; closeSheet(); var lay=_pendingLayout; _pendingLayout=null;
+function onConfigured(spec){ const eid=state.editId; state.editId=null; closeSheet(); var lay=_pendingLayout; _pendingLayout=null; if(spec&&spec.id==null){ spec.id=(window._cfgProd&&window._cfgProd.id)||(window._catDetailProd&&window._catDetailProd.id)||null; }
  if(eid){ const pc=state.pieces.find(p=>p.id===eid); if(pc){ pc.spec=spec; if(isSectional(spec)){ applySectionalConfig(pc, lay||spec.config||((secConfigs(spec)||{}).def)||"l_r"); } state.sel=pc.id; state.inspect=pc.id; render(); save(); return; } }
  if(window._catAddMode){ window._catAddMode=0; if(lay&&isSectional(spec))spec.config=lay; addFromCatalogue({kind:"al",spec:spec}); return; }
  if(lay&&isSectional(spec)) spec.config=lay;
@@ -1665,7 +1735,7 @@ function openDetail(p){
   var info='<div class="cd-info"><h2>'+esc(p.model)+'</h2><div class="cd-brand">'+esc(p.vendor||p.category||'')+'</div><div class="cd-price" id="cdPrice">'+priceRow(p)+'</div>'+cfgnote+(kv?'<div class="cd-sec"><h4>Specifications</h4>'+kv+'</div>':'')+fin+(p.desc?'<div class="cd-sec"><h4>About</h4><div class="cd-desc">'+esc(p.desc)+'</div></div>':'')+'<div class="cd-cta"><button class="cd-add" id="cdAdd">Add to room</button></div></div>';
   $("#cdbody").innerHTML=_cdMedia(p)+info;
   $("#cdTitle").textContent=p.model;
-  window._catDetailProd=p; window._catAddMode=p.cfg?1:0;
+  window._catDetailProd=p; window._cfgProd=null; window._catAddMode=p.cfg?1:0;
   var gm=$("#cdMain"); if(gm){ $("#cdbody").querySelectorAll(".cd-thumbs img").forEach(function(t){ t.onclick=function(){ gm.style.display='block'; gm.src=t.src; $("#cdbody").querySelectorAll(".cd-thumbs img").forEach(function(x){x.classList.toggle("on",x===t);}); }; }); }
   if(p.cfg){ var ifr=$("#cdFrame"); var sp={model:p.cfg,modelLabel:p.model}; if(isSectional(sp)&&secConfigs(sp)){ var tries=0; var at=function(){ if(_injectSecRow(ifr,sp,null,"#c4baa8"))return; if(tries++<45)setTimeout(at,110); }; ifr.addEventListener("load",function(){tries=0;at();}); at(); } }
   $("#cdAdd").onclick=function(){ if(p.cfg){ var ifr=$("#cdFrame"); try{ var arb=ifr.contentDocument.getElementById("addRoomBtn"); if(arb){ window._catAddMode=1; arb.click(); return; } }catch(e){} } addFromCatalogue({kind:"prop",spec:propSpec(p)}); };
@@ -1746,7 +1816,7 @@ var _pendingLayout=null;
  function _drawCfgSil(sp,key,hex){ var o=_cfgOpt(sp,key); var sil=document.getElementById("cfgSil"), dim=document.getElementById("cfgSilDim"); if(!o||!sil)return;
   sil.innerHTML='<div class="arch'+(o.flip?" flip":"")+'" style="--s:url(/arch/'+o.sprite+'.png);--ac:'+hex+'"></div>';
   if(dim)dim.textContent=o.w+'\u0022 W \u00d7 '+o.d+'\u0022 D'; }
- function openConfigurator(p){ sheetOpen("Configure · "+p.model); back.style.display="block"; _pendingLayout=null;
+ function openConfigurator(p){ window._cfgProd=p; sheetOpen("Configure · "+p.model); back.style.display="block"; _pendingLayout=null;
   var editPc=state.editId?state.pieces.find(function(x){return x.id===state.editId;}):null;
   var sp=editPc?editPc.spec:{model:p.cfg,modelLabel:p.model};
   var hex=(editPc&&editPc.spec.coverHex)||"#c4baa8";
@@ -1855,4 +1925,284 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
  document.addEventListener('click',function(e){ var b=e.target.closest&&e.target.closest('.pvseg [data-pv]'); if(b){ e.preventDefault(); window.setPriceView(b.dataset.pv); } });
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== Trig Designer Portal (v1) — magic-link auth + Supabase user data ===== */
+(function(){
+  /* ---- CONFIG: filled in once the Supabase project exists ---- */
+  var SUPA_URL = "https://xyfogedlowneaevmjkci.supabase.co";
+  var SUPA_KEY = "sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu";
+  /* ----------------------------------------------------------- */
+  var sb=null, USER=null, PROFILE=null, _tab="rooms", _booted=false, _openClient=null;
+  var DATA={clients:[],rooms:[],notes:[]};
+
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function note(m){ try{ if(window.toast) window.toast(m); }catch(e){} }
+  function round2(n){ return Math.round((n||0)*100)/100; }
+  function configured(){ return SUPA_URL.indexOf("__SUPA")!==0 && SUPA_KEY.indexOf("__SUPA")!==0 && !!SUPA_URL && !!SUPA_KEY; }
+  function sbc(){ if(!sb && configured() && window.supabase){ sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); } return sb; }
+  function byId(id){ return (window.CATALOG||[]).find(function(p){return p.id===id;})||{}; }
+
+  /* ---------- open / close the portal view ---------- */
+  function openPortal(){
+    el("home").classList.add("gone");
+    ["catalogue","catdetail","vigpage","vighome","maphome"].forEach(function(id){var x=el(id);if(x)x.classList.add("gone");});
+    var b=el("bar"); if(b)b.style.display="none";
+    el("portal").classList.remove("gone");
+    boot();
+  }
+  function closePortal(){ el("portal").classList.add("gone"); el("home").classList.remove("gone"); }
+  window.openPortal=openPortal; window.closePortal=closePortal;
+
+  function setSignOut(on){ var s=el("ptSignOut"); if(s)s.style.display=on?"block":"none"; }
+
+  function boot(){
+    if(!configured()){ setSignOut(false); renderNotConfigured(); return; }
+    if(!window.supabase){ el("portalBody").innerHTML=`<div class="pt-empty"><h3>Connecting…</h3><p>Loading the portal service.</p></div>`; setTimeout(boot,400); return; }
+    sbc();
+    if(_booted){ route(); return; }
+    _booted=true;
+    sb.auth.getSession().then(function(r){
+      USER = (r && r.data && r.data.session) ? r.data.session.user : null;
+      sb.auth.onAuthStateChange(function(_e,sess){ USER = sess?sess.user:null; route(); });
+      route();
+    });
+  }
+
+  function route(){
+    if(!configured()){ setSignOut(false); renderNotConfigured(); return; }
+    if(!USER){ setSignOut(false); renderLogin(); return; }
+    setSignOut(true);
+    renderShell();
+    loadAll().then(renderTab);
+  }
+
+  /* ---------- not configured ---------- */
+  function renderNotConfigured(){
+    el("portalBody").innerHTML='<div class="pt-empty"><h3>Portal is ready — almost</h3>'
+      +'<p>The designer portal is fully built. It just needs the Supabase project connected '
+      +'(one-time setup). Once that’s wired in, sign in here with your email and your profile, '
+      +'clients, saved rooms, and notes all live here.</p></div>';
+  }
+
+  /* ---------- login (magic link) ---------- */
+  function renderLogin(){
+    el("portalBody").innerHTML=''
+     +'<div class="pt-login"><div class="pt-card pt-loginc">'
+     +'<h2>Designer sign-in</h2>'
+     +'<p class="pt-sub">Enter your email and we’ll send a one-tap sign-in link. No password to remember.</p>'
+     +'<form id="ptLoginForm">'
+     +'<input id="ptEmail" type="email" required placeholder="you@studio.com" autocomplete="email"/>'
+     +'<button class="pt-btn pri" id="ptSend" type="submit">Email me a sign-in link</button>'
+     +'</form><div class="pt-msg" id="ptMsg"></div></div></div>';
+    el("ptLoginForm").onsubmit=function(ev){ ev.preventDefault();
+      var email=(el("ptEmail").value||"").trim(); if(!email)return;
+      var btn=el("ptSend"); btn.disabled=true; btn.textContent="Sending…";
+      sb.auth.signInWithOtp({email:email,options:{emailRedirectTo:location.origin+location.pathname+"?portal=1"}})
+      .then(function(r){
+        if(r.error){ el("ptMsg").innerHTML='<span class="err">'+esc(r.error.message)+'</span>'; btn.disabled=false; btn.textContent="Email me a sign-in link"; }
+        else { el("ptMsg").innerHTML='<span class="ok">Check your inbox — tap the link in the email to sign in.</span>'; btn.textContent="Link sent ✓"; }
+      });
+    };
+  }
+
+  /* ---------- data load ---------- */
+  function loadAll(){
+    if(!USER) return Promise.resolve();
+    return Promise.all([
+      sb.from("designers").select("*").eq("id",USER.id).maybeSingle(),
+      sb.from("clients").select("*").order("name"),
+      sb.from("rooms").select("*").order("updated_at",{ascending:false}),
+      sb.from("notes").select("*").order("created_at",{ascending:false})
+    ]).then(function(res){
+      PROFILE = (res[0]&&res[0].data) || {id:USER.id,email:USER.email};
+      DATA.clients = (res[1]&&res[1].data)||[];
+      DATA.rooms   = (res[2]&&res[2].data)||[];
+      DATA.notes   = (res[3]&&res[3].data)||[];
+    }).catch(function(e){ note("Load error"); });
+  }
+
+  /* ---------- shell ---------- */
+  function renderShell(){
+    if(el("ptTab")) return; /* already built */
+    el("portalBody").innerHTML=''
+     +'<div class="pt-wrap"><div class="pt-tabs">'
+     +'<button data-pt="rooms">Saved rooms</button>'
+     +'<button data-pt="clients">Clients</button>'
+     +'<button data-pt="profile">Profile</button>'
+     +'</div><div id="ptTab"></div></div>';
+    Array.prototype.forEach.call(el("portalBody").querySelectorAll(".pt-tabs button"),function(b){
+      b.onclick=function(){ _tab=b.dataset.pt; _openClient=null; renderTab(); };
+    });
+    var so=el("ptSignOut"); if(so) so.onclick=function(){ sb.auth.signOut().then(function(){ USER=null; route(); }); };
+  }
+  function renderTab(){
+    var w=el("portalBody").querySelector(".pt-tabs"); if(!w){ renderShell(); }
+    Array.prototype.forEach.call(el("portalBody").querySelectorAll(".pt-tabs button"),function(b){ b.classList.toggle("on",b.dataset.pt===_tab); });
+    if(_tab==="rooms") renderRooms();
+    else if(_tab==="clients") _openClient?renderClientDetail(_openClient):renderClients();
+    else renderProfile();
+  }
+
+  /* ---------- ROOMS ---------- */
+  function clientName(id){ var c=DATA.clients.find(function(x){return x.id===id;}); return c?c.name:null; }
+  function renderRooms(){
+    var hasLive = window.state && state.room && state.pieces && state.pieces.length;
+    var h='<div class="pt-bar">';
+    if(hasLive) h+='<button class="pt-btn pri" id="ptSaveCur">↑ Save current room</button>';
+    h+='<span class="sp"></span></div>';
+    if(!DATA.rooms.length){ h+='<div class="pt-empty"><h3>No saved rooms yet</h3><p>Build a room in the Room Builder, then save it here to keep it, edit it later, or attach it to a client.</p></div>'; }
+    else {
+      h+='<div class="pt-list">';
+      DATA.rooms.forEach(function(r){
+        var n=(r.items||[]).length, cn=clientName(r.client_id);
+        h+='<div class="pt-item"><div class="pt-i-main"><div class="pt-i-name">'+esc(r.name)+'</div>'
+          +'<div class="pt-i-meta">'+n+' piece'+(n===1?'':'s')+(cn?' · '+esc(cn):'')+' · '+fmtDate(r.updated_at)+'</div></div>'
+          +'<div class="pt-i-acts">'
+          +'<button class="pt-btn sm pri" data-open="'+r.id+'">Open</button>'
+          +'<button class="pt-btn sm" data-ren="'+r.id+'">Rename</button>'
+          +'<button class="pt-btn sm danger" data-del="'+r.id+'">Delete</button>'
+          +'</div></div>';
+      });
+      h+='</div>';
+    }
+    el("ptTab").innerHTML=h;
+    if(hasLive) el("ptSaveCur").onclick=function(){ saveCurrentRoom(null); };
+    bindActs("ptTab","open",function(id){ openRoomInPlanner(DATA.rooms.find(function(r){return r.id===id;})); });
+    bindActs("ptTab","ren",function(id){ var r=DATA.rooms.find(function(x){return x.id===id;}); var nm=prompt("Rename room",r.name); if(nm==null)return; sb.from("rooms").update({name:nm.trim()||r.name}).eq("id",id).then(function(){ loadAll().then(renderTab); }); });
+    bindActs("ptTab","del",function(id){ if(!confirm("Delete this saved room?"))return; sb.from("rooms").delete().eq("id",id).then(function(){ loadAll().then(renderTab); }); });
+  }
+
+  function saveCurrentRoom(clientId){
+    if(!(window.state && state.room && state.pieces && state.pieces.length)){ note("Build a room first"); return; }
+    var items=(state.pieces||[]).map(function(pc){
+      var s=pc.spec||{};
+      return { app_id:s.id, qty:1,
+        cfg:(window.isSectional&&isSectional(s))?(s.config||null):null,
+        finish:s.finishKey||pc.finish||null,
+        x:round2(pc.x), y:round2(pc.y), rot:pc.rot||0 };
+    }).filter(function(it){ return it.app_id!=null; });
+    var room={ w:state.room.w, d:state.room.d, type:state.room.type||null, floor:state.room.floor||null, shape:state.room.shape||null };
+    var def=(window.activeRoom&&activeRoom()&&activeRoom().name)||"New room";
+    var name=prompt("Name this room",def); if(name==null)return;
+    var rec={ owner_id:USER.id, name:(name.trim()||"Room"), room:room, items:items };
+    if(clientId) rec.client_id=clientId;
+    sb.from("rooms").insert(rec).then(function(r){ if(r.error){ note(r.error.message); return; } note("Saved to portal"); if(clientId)_openClient=clientId; loadAll().then(renderTab); });
+  }
+
+  function openRoomInPlanner(rec){
+    if(!rec) return;
+    var room=Object.assign({w:14,d:12}, rec.room&&rec.room.w?rec.room:{});
+    var pieces=(rec.items||[]).map(function(it){
+      var p=byId(it.app_id);
+      var spec={ id:it.app_id, model:p.model, category:p.category, vendor:p.vendor, price:p.price,
+        wIn:p.wIn||40, dIn:p.dIn||40, gk:p.gk||(window.kind?kind(p.category||"",p.model||""):"prop"), config:it.cfg||null };
+      return { id:"p"+Date.now().toString(36)+Math.floor(Math.random()*9e3), kind:(p.cfg?"al":"prop"), spec:spec, x:it.x||0, y:it.y||0, rot:it.rot||0, finish:it.finish||null };
+    });
+    var rid="r"+Date.now().toString(36)+Math.floor(Math.random()*900);
+    window.state.rooms=state.rooms||[];
+    state.rooms.push({ id:rid, name:rec.name||"Room", room:room, pieces:pieces, _portalId:rec.id });
+    state.activeId=rid; state.room=room; state.pieces=pieces; state.sel=null; state.editVig=null;
+    if(window.saveRooms) saveRooms();
+    closePortal();
+    if(window.enter) enter("design");
+    setTimeout(function(){
+      (state.pieces||[]).forEach(function(pc){ if(window.isSectional&&isSectional(pc.spec)&&window.applySectionalConfig) applySectionalConfig(pc, pc.spec.config||((window.secConfigs&&secConfigs(pc.spec)||{}).def)||"l_r"); });
+      if(window.render) render(); if(window.fit) fit();
+    },40);
+  }
+
+  /* ---------- CLIENTS ---------- */
+  function renderClients(){
+    var h='<div class="pt-bar"><button class="pt-btn pri" id="ptAddClient">+ Add client</button><span class="sp"></span></div>';
+    if(!DATA.clients.length){ h+='<div class="pt-empty"><h3>No clients yet</h3><p>Add a client to keep their contact details, attach saved rooms, and jot notes per project.</p></div>'; }
+    else { h+='<div class="pt-list">'; DATA.clients.forEach(function(c){
+        var rn=DATA.rooms.filter(function(r){return r.client_id===c.id;}).length;
+        h+='<div class="pt-item"><div class="pt-i-main"><div class="pt-i-name">'+esc(c.name)+'</div>'
+          +'<div class="pt-i-meta">'+[c.email,c.phone].filter(Boolean).map(esc).join(' · ')+(rn?(([c.email,c.phone].filter(Boolean).length?' · ':'')+rn+' room'+(rn===1?'':'s')):'')+'</div></div>'
+          +'<div class="pt-i-acts"><button class="pt-btn sm" data-view="'+c.id+'">Open</button></div></div>';
+      }); h+='</div>'; }
+    el("ptTab").innerHTML=h;
+    el("ptAddClient").onclick=function(){ clientForm(null); };
+    bindActs("ptTab","view",function(id){ _openClient=id; renderClientDetail(id); });
+  }
+
+  function clientForm(c){
+    c=c||{};
+    var h='<div class="pt-card"><h2>'+(c.id?'Edit client':'New client')+'</h2>'
+      +'<div class="pt-row"><div class="pt-field"><label>Name</label><input id="cfName" value="'+esc(c.name||'')+'" placeholder="Client name"/></div>'
+      +'<div class="pt-field"><label>Company</label><input id="cfCo" value="'+esc(c.company||'')+'"/></div></div>'
+      +'<div class="pt-row"><div class="pt-field"><label>Email</label><input id="cfEmail" type="email" value="'+esc(c.email||'')+'"/></div>'
+      +'<div class="pt-field"><label>Phone</label><input id="cfPhone" value="'+esc(c.phone||'')+'"/></div></div>'
+      +'<div class="pt-bar"><button class="pt-btn pri" id="cfSave">Save</button><button class="pt-btn" id="cfCancel">Cancel</button></div></div>';
+    el("ptTab").innerHTML=h;
+    el("cfCancel").onclick=function(){ _openClient=c.id||null; c.id?renderClientDetail(c.id):renderClients(); };
+    el("cfSave").onclick=function(){
+      var rec={ name:(el("cfName").value||'').trim(), company:el("cfCo").value.trim()||null, email:el("cfEmail").value.trim()||null, phone:el("cfPhone").value.trim()||null };
+      if(!rec.name){ note("Name required"); return; }
+      var q = c.id ? sb.from("clients").update(rec).eq("id",c.id) : sb.from("clients").insert(Object.assign({owner_id:USER.id},rec));
+      q.then(function(r){ if(r.error){note(r.error.message);return;} note("Saved"); loadAll().then(function(){ _openClient=null; renderClients(); }); });
+    };
+  }
+
+  function renderClientDetail(id){
+    var c=DATA.clients.find(function(x){return x.id===id;}); if(!c){ _openClient=null; return renderClients(); }
+    var rooms=DATA.rooms.filter(function(r){return r.client_id===id;});
+    var notes=DATA.notes.filter(function(n){return n.client_id===id;});
+    var h='<div class="pt-bar"><button class="pt-link" id="ptBackClients">‹ All clients</button><span class="sp"></span>'
+      +'<button class="pt-btn sm" id="ptEditClient">Edit</button>'
+      +'<button class="pt-btn sm danger" id="ptDelClient">Delete</button></div>';
+    h+='<div class="pt-card"><h2>'+esc(c.name)+'</h2><div class="pt-sub">'+[c.company,c.email,c.phone].filter(Boolean).map(esc).join(' · ')+'</div></div>';
+    h+='<div class="pt-secttl">Rooms</div>';
+    if(rooms.length){ h+='<div class="pt-list">'; rooms.forEach(function(r){ var n=(r.items||[]).length;
+        h+='<div class="pt-item"><div class="pt-i-main"><div class="pt-i-name">'+esc(r.name)+'</div><div class="pt-i-meta">'+n+' piece'+(n===1?'':'s')+' · '+fmtDate(r.updated_at)+'</div></div>'
+          +'<div class="pt-i-acts"><button class="pt-btn sm pri" data-open="'+r.id+'">Open</button></div></div>'; }); h+='</div>'; }
+    else { var live=(window.state&&state.room&&state.pieces&&state.pieces.length); h+='<div class="pt-sub" style="margin:0 2px 10px">No rooms attached yet.'+(live?' ':'')+'</div>'; if(live)h+='<button class="pt-btn sm pri" id="ptSaveToClient" style="margin-bottom:6px">↑ Save current room to '+esc(c.name)+'</button>'; }
+    h+='<div class="pt-secttl">Notes</div>';
+    h+='<div class="pt-field"><textarea id="ptNoteBody" placeholder="Add a note about this client or project…"></textarea></div>';
+    h+='<div class="pt-bar"><button class="pt-btn pri sm" id="ptAddNote">Add note</button></div>';
+    if(notes.length){ h+='<div class="pt-list">'; notes.forEach(function(n){ h+='<div class="pt-note">'+esc(n.body).replace(/\n/g,'<br>')+'<div class="pt-note-d">'+fmtDate(n.created_at)+' · <span class="pt-link" data-delnote="'+n.id+'">delete</span></div></div>'; }); h+='</div>'; }
+    el("ptTab").innerHTML=h;
+    el("ptBackClients").onclick=function(){ _openClient=null; renderClients(); };
+    el("ptEditClient").onclick=function(){ clientForm(c); };
+    el("ptDelClient").onclick=function(){ if(!confirm("Delete "+c.name+" and their notes?"))return; sb.from("clients").delete().eq("id",id).then(function(){ _openClient=null; loadAll().then(renderClients); }); };
+    var stc=el("ptSaveToClient"); if(stc) stc.onclick=function(){ saveCurrentRoom(id); };
+    bindActs("ptTab","open",function(rid){ openRoomInPlanner(DATA.rooms.find(function(r){return r.id===rid;})); });
+    el("ptAddNote").onclick=function(){ var body=(el("ptNoteBody").value||'').trim(); if(!body)return; sb.from("notes").insert({owner_id:USER.id,client_id:id,body:body}).then(function(r){ if(r.error){note(r.error.message);return;} loadAll().then(function(){ renderClientDetail(id); }); }); };
+    bindActs("ptTab","delnote",function(nid){ sb.from("notes").delete().eq("id",nid).then(function(){ loadAll().then(function(){ renderClientDetail(id); }); }); });
+  }
+
+  /* ---------- PROFILE ---------- */
+  function renderProfile(){
+    var p=PROFILE||{};
+    var h='<div class="pt-card"><h2>Your profile</h2><p class="pt-sub">This is how you appear on shared layouts and exports.</p>'
+      +'<div class="pt-row"><div class="pt-field"><label>Name</label><input id="pfName" value="'+esc(p.name||'')+'"/></div>'
+      +'<div class="pt-field"><label>Company / studio</label><input id="pfCo" value="'+esc(p.company||'')+'"/></div></div>'
+      +'<div class="pt-row"><div class="pt-field"><label>Email</label><input value="'+esc(p.email||USER.email||'')+'" disabled/></div>'
+      +'<div class="pt-field"><label>Phone</label><input id="pfPhone" value="'+esc(p.phone||'')+'"/></div></div>'
+      +'<div class="pt-field"><label>Photo URL (optional)</label><input id="pfPhoto" value="'+esc(p.photo_url||'')+'" placeholder="https://…"/></div>'
+      +'<div class="pt-field"><label>Bio (optional)</label><textarea id="pfBio" placeholder="A line about you or your studio…">'+esc(p.bio||'')+'</textarea></div>'
+      +'<div class="pt-bar"><button class="pt-btn pri" id="pfSave">Save profile</button></div></div>';
+    el("ptTab").innerHTML=h;
+    el("pfSave").onclick=function(){
+      var rec={ id:USER.id, name:el("pfName").value.trim()||null, company:el("pfCo").value.trim()||null, phone:el("pfPhone").value.trim()||null, photo_url:el("pfPhoto").value.trim()||null, bio:el("pfBio").value.trim()||null, email:p.email||USER.email };
+      sb.from("designers").upsert(rec).then(function(r){ if(r.error){note(r.error.message);return;} note("Profile saved"); PROFILE=Object.assign({},PROFILE,rec); });
+    };
+  }
+
+  /* ---------- helpers ---------- */
+  function bindActs(root,attr,fn){ Array.prototype.forEach.call(el(root).querySelectorAll("[data-"+attr+"]"),function(b){ b.onclick=function(){ fn(b.getAttribute("data-"+attr)); }; }); }
+  function fmtDate(s){ if(!s)return""; try{ var d=new Date(s); return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }catch(e){ return ""; } }
+
+  /* ---------- wire entry points ---------- */
+  document.addEventListener("DOMContentLoaded",function(){
+    var bk=el("ptBack"); if(bk) bk.onclick=closePortal;
+    var ep=el("enterPortal"); if(ep) ep.onclick=openPortal;
+  });
+  /* deep-link / magic-link return: ?portal=1 opens the portal straight away */
+  try{ if(/[?&]portal=1/.test(location.search)){ window.addEventListener("load",function(){ var g=el("studioGate"); if(g)g.style.display="none"; openPortal(); }); } }catch(e){}
+})();
+</script>
+
 </body></html>
