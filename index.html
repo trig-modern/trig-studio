@@ -513,6 +513,19 @@
 .cd-heart.on{color:#fff;background:var(--accent,#e0512f);border-color:var(--accent,#e0512f);}
 .catfav{border:1px solid var(--line,#d2d2d7);background:#fff;border-radius:980px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink);white-space:nowrap;margin-left:8px;}
 .catfav.on{background:var(--accent,#e0512f);color:#fff;border-color:var(--accent,#e0512f);}
+
+/* === comfort pass v54: soft depth | spring motion | tactile === */
+:root{ --tg-spring:cubic-bezier(.34,1.4,.5,1); --tg-rest:0 1px 2px rgba(80,55,30,.05),0 6px 18px rgba(80,55,30,.06); --tg-lift:0 8px 16px rgba(80,55,30,.09),0 24px 50px rgba(80,55,30,.15); }
+.pt-card,.pt-stat,.pt-roomcard{ box-shadow:var(--tg-rest); border-color:rgba(120,90,50,.06); }
+.pt-roomcard,.pt-cc,.ccard{ transition:transform .26s var(--tg-spring),box-shadow .26s cubic-bezier(.32,.72,0,1),border-color .2s; }
+.pt-roomcard:hover,.pt-cc:hover,.ccard:hover{ transform:translateY(-5px) scale(1.012); box-shadow:var(--tg-lift); }
+.pt-crow,.pt-delivrow{ transition:background .15s,transform .18s var(--tg-spring); }
+.pt-crow:active,.pt-delivrow:active{ transform:scale(.985); }
+.pt-btn,.cd-add,.b,.chip,.heart,.cheart,.cd-heart,.pt-tabs button,.catfav,.dimchip{ transition:transform .13s var(--tg-spring),background .15s,box-shadow .2s,color .15s,border-color .15s; }
+.pt-btn:active,.cd-add:active,.b:active,.chip:active,.catfav:active,.pt-tabs button:active{ transform:scale(.95); }
+.cheart.pop,.cd-heart.pop{ animation:tgPop .42s var(--tg-spring); }
+@keyframes tgPop{0%{transform:scale(1)}32%{transform:scale(1.34)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){ .pt-roomcard:hover,.pt-cc:hover,.ccard:hover{transform:none;} .cheart.pop,.cd-heart.pop{animation:none;} }
 </style>
 
 <style id="studioGateCSS">
@@ -1813,7 +1826,7 @@ function renderCatalogue(){
   var cc=$("#catCount"); if(cc)cc.textContent=list.length+" piece"+(list.length===1?"":"s");
   grid.innerHTML=list.map(function(p){var _hb=window._designerMode?('<button class="cheart'+((window.trigFav&&window.trigFav.has(p.id))?' on':'')+'" data-fav="'+p.id+'" aria-label="Save">♥</button>'):''; return '<div class="ccard" data-id="'+p.id+'"><div class="cimg">'+_catImg(p)+_hb+'</div><div class="cmeta"><b>'+esc(p.model)+'</b><span class="cv">'+esc(p.vendor||p.category||"")+'</span>'+swatchDots(p)+priceRow(p)+'</div></div>';}).join("") || '<div class="catempty">No pieces match that.</div>';
   grid.querySelectorAll(".ccard").forEach(function(el){ el.onclick=function(){ var p=byId(el.dataset.id); if(p)openDetail(p); }; });
-   grid.querySelectorAll(".cheart").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); if(window.trigFav){ window.trigFav.toggle(b.dataset.fav); b.classList.toggle("on"); if(window._favOnly)renderCatalogue(); } }; });
+   grid.querySelectorAll(".cheart").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); if(window.trigFav){ window.trigFav.toggle(b.dataset.fav); b.classList.toggle("on"); b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); if(b.classList.contains("on")&&window.toast)toast("♥ Saved"); if(window._favOnly)renderCatalogue(); } }; });
 }
 function _fillCatVendors(){ var sel=$("#catVendor"); if(!sel)return; var vs={}; CATALOG.forEach(function(p){if(!p.hidden&&p.vendor)vs[p.vendor]=1;}); sel.innerHTML='<option value="All">All brands</option>'+Object.keys(vs).sort().map(function(v){return '<option value="'+esc(v)+'">'+esc(v)+'</option>';}).join(""); }
 function _buildCatChips(){ var el=$("#catChips"); if(!el)return; el.innerHTML=MENUGROUPS.map(function(g){return '<button class="chip'+(g===catGroup?" on":"")+'" data-g="'+g+'">'+g+'</button>';}).join(""); el.querySelectorAll(".chip").forEach(function(b){ b.onclick=function(){ catGroup=b.dataset.g; el.querySelectorAll(".chip").forEach(function(x){x.classList.toggle("on",x.dataset.g===catGroup);}); renderCatalogue(); }; }); }
@@ -1841,7 +1854,7 @@ function openDetail(p){
   window._catDetailProd=p; window._cfgProd=null; window._catAddMode=p.cfg?1:0;
   var gm=$("#cdMain"); if(gm){ $("#cdbody").querySelectorAll(".cd-thumbs img").forEach(function(t){ t.onclick=function(){ gm.style.display='block'; gm.src=t.src; $("#cdbody").querySelectorAll(".cd-thumbs img").forEach(function(x){x.classList.toggle("on",x===t);}); }; }); }
   if(p.cfg){ var ifr=$("#cdFrame"); var sp={model:p.cfg,modelLabel:p.model}; if(isSectional(sp)&&secConfigs(sp)){ var tries=0; var at=function(){ if(_injectSecRow(ifr,sp,null,"#c4baa8"))return; if(tries++<45)setTimeout(at,110); }; ifr.addEventListener("load",function(){tries=0;at();}); at(); } }
-  var _ch=$("#cdHeart"); if(_ch)_ch.onclick=function(){ if(window.trigFav){ window.trigFav.toggle(p.id); _ch.classList.toggle("on"); } };
+  var _ch=$("#cdHeart"); if(_ch)_ch.onclick=function(){ if(window.trigFav){ window.trigFav.toggle(p.id); _ch.classList.toggle("on"); _ch.classList.remove("pop"); void _ch.offsetWidth; _ch.classList.add("pop"); if(_ch.classList.contains("on")&&window.toast)toast("♥ Saved"); } };
    $("#cdAdd").onclick=function(){ if(window._designerMode && window.trigSaveToRoom){ window.trigSaveToRoom(p); return; } if(p.cfg){ var ifr=$("#cdFrame"); try{ var arb=ifr.contentDocument.getElementById("addRoomBtn"); if(arb){ window._catAddMode=1; arb.click(); return; } }catch(e){} } addFromCatalogue({kind:"prop",spec:propSpec(p)}); };
   document.querySelectorAll('#cdbar .pvseg [data-pv]').forEach(function(b){b.classList.toggle('on',b.dataset.pv===(window.priceView||'client'));});
   $("#cdBack").onclick=closeDetail;
