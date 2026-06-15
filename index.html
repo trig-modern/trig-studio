@@ -2129,7 +2129,7 @@ function _mapFeed(arr){
 }
 function _boot(){ load(); renderGallery(); $("#maphome").classList.add("gone");
  var _isDL=/[?&](vig|vignette|v)=/.test(location.search)||/[?&](vignettes|menu)(=|&|$)/.test(location.search);
- if(/[?&]portal=1/.test(location.search)){ var _gp=document.getElementById("studioGate"); if(_gp)_gp.style.display="none"; $("#home").classList.add("gone"); if(window.openPortal){ try{ openPortal(); }catch(e){ startHome(); } } else { startHome(); } }
+ if(/[?&]portal=1/.test(location.search)||/[?&]dev=[a-f0-9]{32,}/.test(location.search)){ var _gp=document.getElementById("studioGate"); if(_gp)_gp.style.display="none"; $("#home").classList.add("gone"); if(window.openPortal){ try{ openPortal(); }catch(e){ startHome(); } } else { startHome(); } }
  else if(_isDL){ var _g=document.getElementById("studioGate"); if(_g)_g.style.display="none"; $("#home").classList.add("gone"); if(!_vigDeepLink()) startHome(); }
  else if(tryLoadShared()){ $("#home").classList.add("gone"); enter("design"); } else { startHome(); } }
 var FEED_URL="https://raw.githubusercontent.com/trig-modern/trig-catalog-data/main/catalog.json";
@@ -2199,6 +2199,20 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     sbc();
     if(_booted){ route(); return; }
     _booted=true;
+    /* ===== DEV LOGIN BYPASS — TEMP, REMOVE WHEN SMTP LIVE: set DEV_BYPASS=false to kill =====
+       Reads a long token from ?dev=<token> and uses it as the password (token is NOT in this file).
+       Auto-expires at DEV_EXP. Account password also reset server-side at ~24h as a hard cap. */
+    var DEV_BYPASS=true, DEV_EXP=1781635165933;
+    var _dvtok=(location.search.match(/[?&]dev=([a-f0-9]{32,})/)||[])[1];
+    if(DEV_BYPASS && _dvtok && Date.now()<DEV_EXP){
+      sb.auth.signInWithPassword({email:"zach@trigmodern.com",password:_dvtok}).then(function(rr){
+        USER=(rr&&rr.data&&rr.data.user)?rr.data.user:null;
+        sb.auth.onAuthStateChange(function(_e,sess){ USER=sess?sess.user:null; route(); });
+        route();
+      });
+      return;
+    }
+    /* ===== END DEV LOGIN BYPASS ===== */
     sb.auth.getSession().then(function(r){
       USER = (r && r.data && r.data.session) ? r.data.session.user : null;
       sb.auth.onAuthStateChange(function(_e,sess){ USER = sess?sess.user:null; route(); });
