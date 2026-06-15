@@ -1313,7 +1313,7 @@ function renderMap(){ const P=26,VOID=24,Mft=0.7;
  s+='<rect x="'+fx+'" y="'+fy+'" '+fa+' fill="url(#wood)" filter="url(#floorshadow)"/>';
  s+='<rect x="'+fx+'" y="'+fy+'" '+fa+' fill="url(#floorlite)"/>';
  s+='<rect x="'+fx+'" y="'+fy+'" '+fa+' fill="none" stroke="#140c04" stroke-opacity=".5" stroke-width="2"/>';
- VIGNETTES.forEach((v,i)=>{ const mx=(v.masterX||0)*P+ox,my=(v.masterY||0)*P+oy,w=(v.roomW||10)*P,h=(v.roomD||10)*P,has=(v.pieces||[]).length,sel=(selVig===i);
+ VIGNETTES.forEach((v,i)=>{ const mx=(v.masterX||0)*P+ox,my=(v.masterY||0)*P+oy,w=(v.roomW||10)*P,h=(v.roomD||10)*P,has=((v.pieces||[]).length|| /rug library/i.test(v.name||"")),sel=(selVig===i);
    s+='<g class="mzone'+(has?'':' empty')+(sel?' sel':'')+'" data-i="'+i+'" transform="translate('+mx.toFixed(1)+' '+my.toFixed(1)+')">';
    s+='<rect class="mzbox" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4"/>';
    if(has&&!sel) s+=_zonePieces(v,P);
@@ -1329,14 +1329,14 @@ function qpPrice(p){ if(p.price) return money(p.price); const base={sofa:3200,co
 function _rowThumb(x){ const p=x.p, ph=(p.photos&&p.photos.length)?p.photos[0]:""; return ph?('<span class="src-g"><img class="srgi" src="'+ph+'" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'noimg\')"/></span>'):('<span class="src-g">'+glyphSVG(p.gk||"box",x.pc.category||p.category,x.pc.model||p.model,p.wIn||40)+'</span>'); }
 function _rowHtml(x){ const p=x.p, nm=esc(x.pc.model||p.model||"Piece"), vn=esc(p.vendor||""), ph=(p.photos&&p.photos.length)?p.photos[0]:"";
  return '<div class="src-row" data-photo="'+ph+'" data-name="'+nm+'" data-ven="'+vn+'" data-price="'+esc(qpPrice(p))+'">'+_rowThumb(x)+'<span class="src-n">'+nm+'</span><span class="src-v">'+vn+'</span></div>'; }
-function renderList(){ let h='';
- VIGNETTES.forEach((v,i)=>{ if(!(v.pieces||[]).length) return; const sel=(selVig===i); const all=vigHighlights(v); const top=all.slice(0,3);
+function renderList(){ let h=''; let rugH='';
+ VIGNETTES.forEach((v,i)=>{ if(/rug library/i.test(v.name||"")){ var _rg=(window.CATALOG||[]).filter(function(p){return p.rug_swatches&&p.rug_swatches.length;}); var _cl=_rg.reduce(function(n,p){return n+p.rug_swatches.length;},0); rugH='<div class="srcard srcard-rl" data-i="'+i+'"><div class="src-head"><div><div class="src-name">Rug Library</div><div class="src-meta">'+_cl+' swatches \u00b7 '+_rg.length+' collections</div></div><span class="src-chev">\u203a</span></div><div class="src-preview"><div class="src-pl">Loloi sample wall \u2014 browse by collection, designer & tier</div></div><button class="b pri src-view" data-i="'+i+'" style="margin-top:8px">Browse swatches \u2192</button></div>'; return; } if(!(v.pieces||[]).length) return; const sel=(selVig===i); const all=vigHighlights(v); const top=all.slice(0,3);
    h+='<div class="srcard'+(sel?' sel':'')+'" data-i="'+i+'">';
    h+='<div class="src-head"><div><div class="src-name">'+esc(v.name||"")+'</div><div class="src-meta">'+v.pieces.length+' pieces · '+(v.roomW)+'×'+(v.roomD)+' ft</div></div><span class="src-chev">'+(sel?'▾':'›')+'</span></div>';
    if(sel){ h+='<div class="src-body"><div class="src-rows">'+all.map(_rowHtml).join("")+'</div><button class="b pri src-view" data-i="'+i+'">View vignette →</button></div>';
    } else { h+='<div class="src-preview">'+top.map(x=>'<div class="src-pl">'+esc(x.pc.model||x.p.model||"Piece")+'</div>').join("")+'</div>'; }
    h+='</div>'; });
- $("#srList").innerHTML=h;
+ $("#srList").innerHTML=rugH+h;
  $("#srList").querySelectorAll(".srcard").forEach(c=>{ const i=+c.dataset.i; c.querySelector(".src-head").addEventListener("click",()=>toggleVig(i)); });
  $("#srList").querySelectorAll(".src-view").forEach(b=>b.addEventListener("click",e=>{ e.stopPropagation(); viewVig(+b.dataset.i); }));
  bindQuickPeek($("#srList"));
