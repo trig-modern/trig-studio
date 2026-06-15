@@ -254,7 +254,33 @@
    #dside{width:auto;left:10px;right:10px;top:10px;max-height:62%;}
    .m3dwrap model-viewer{height:260px;}
  }
-</style></head><body>
+</style><style>
+#rugLib{padding:14px 16px 60px;max-width:1180px;margin:0 auto;overflow:auto;height:100%;box-sizing:border-box}
+.rl-head{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.rl-back{background:none;border:1px solid var(--line);border-radius:20px;padding:6px 14px;cursor:pointer;color:var(--ink);font:inherit}
+.rl-title{font-size:22px;font-weight:700;color:var(--ink)}
+.rl-sub{font-size:13px;font-weight:400;color:var(--muted);margin-left:10px}
+.rl-bar{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.rl-search{width:100%;max-width:420px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--panel);color:var(--ink)}
+.rl-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rl-chip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:5px 12px;font-size:12.5px;cursor:pointer;color:var(--ink)}
+.rl-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.rl-brands .rl-chip.on{background:#1d1d1f;border-color:#1d1d1f}
+.rl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.rl-card{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);transition:transform .12s,box-shadow .12s}
+.rl-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.10)}
+.rl-img{display:block;width:100%;aspect-ratio:1/1;background-size:cover;background-position:center;background-color:#efe9da}
+.rl-chiponly:after{content:"swatch";position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:10px;color:rgba(0,0,0,.35);letter-spacing:.5px;text-transform:uppercase}
+.rl-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.72);color:#fff;font-size:10px;padding:2px 7px;border-radius:10px}
+.rl-meta{padding:8px 10px 10px}
+.rl-coll{font-size:13px;font-weight:600;color:var(--ink);line-height:1.2}
+.rl-color{font-size:12px;color:var(--muted);margin-top:1px}
+.rl-sku{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.3px}
+.rl-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px}
+.vcard-rl .vc-rl-row{display:flex;gap:5px;margin-top:6px}
+.vc-rl-th{width:42px;height:42px;border-radius:8px;background-size:cover;background-position:center;background-color:#efe9da;border:1px solid var(--line)}
+</style>
+</head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
  <linearGradient id="fab" x1="0" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#dad4c8"/><stop offset="1" stop-color="#bdb6a6"/></linearGradient>
  <linearGradient id="cush" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#e6e0d5"/><stop offset="1" stop-color="#cdc5b5"/></linearGradient>
@@ -882,6 +908,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.pcard:focus-visib
  <div id="vdetail">
   <div class="sfloorwrap" id="sfloorwrap"><div id="sroom"></div></div>
   <aside class="sside" id="sside"></aside>
+  <div id="rugLib" style="display:none"></div>
  </div>
 </div>
 
@@ -1218,14 +1245,41 @@ function vignetteThumb(v,P){ const W=v.roomW||16,D=v.roomD||12,w=W*P,h=D*P;
 const _GORD={loveseat:0,sofa:0,corner:0,sectional:0,sleeper:0,chaise:1,recliner:1,chair:1,bench:1,table:2,cabinet:2,desk:2,shelf:2,bed:1,rug:-1,lamp:4};
 function vigHighlights(v){ const pcs=(v.pieces||[]).map(pc=>({pc,p:byId(pc.productId)||{}}));
  pcs.sort((a,b)=>{ const oa=_GORD[a.p.gk||"box"], ob=_GORD[b.p.gk||"box"]; return (oa==null?5:oa)-(ob==null?5:ob); }); return pcs; }
-function renderGallery(){ const named=VIGNETTES.filter(v=>(v.pieces||[]).length);
- $("#vgrid").innerHTML=named.map((v,i)=>{ const hl=vigHighlights(v),top=hl.slice(0,4);
+function renderGallery(){ const named=VIGNETTES.filter(v=>(v.pieces||[]).length || /rug library/i.test(v.name||""));
+ $("#vgrid").innerHTML=named.map((v,i)=>{
+   if(/rug library/i.test(v.name||"")){ const rugs=(window.CATALOG||[]).filter(p=>p.rug_swatches&&p.rug_swatches.length); const colors=rugs.reduce((n,p)=>n+p.rug_swatches.length,0); const sw=[]; for(const p of rugs){ for(const s of p.rug_swatches){ if(s.image){sw.push(s.image); if(sw.length>=4)break;} } if(sw.length>=4)break; } const thumbs=sw.map(u=>'<span class="vc-rl-th" style="background-image:url('+esc(u)+')"></span>').join(""); return '<div class="vcard vcard-rl" data-i="'+i+'"><div class="vc-accent"></div><div class="vc-head"><div><div class="vc-name">'+esc(v.name)+'</div><div class="vc-meta">'+colors+' colors \u00b7 '+rugs.length+' collections</div></div><span class="vc-arrow">\u2192</span></div><div class="vc-rl-row">'+thumbs+'</div><div class="vc-more">Browse the full Loloi swatch wall</div></div>'; }
+   const hl=vigHighlights(v),top=hl.slice(0,4);
    const rows=top.map(x=>'<div class="vc-row"><span class="vc-g">'+glyphSVG(x.p.gk||"box",x.pc.category||x.p.category,x.pc.model||x.p.model,x.p.wIn||40)+'</span><span class="vc-n">'+esc(x.pc.model||x.p.model||"Piece")+'</span><span class="vc-v">'+esc(x.p.vendor||"")+'</span></div>').join("");
    const more=hl.length>4?'<div class="vc-more">+ '+(hl.length-4)+' more pieces</div>':'';
    return '<div class="vcard" data-i="'+i+'"><div class="vc-accent"></div><div class="vc-head"><div><div class="vc-name">'+esc(v.name||("Vignette "+(i+1)))+'</div><div class="vc-meta">'+hl.length+' pieces · '+(v.roomW||16)+'×'+(v.roomD||12)+' ft</div></div><span class="vc-arrow">→</span></div><div class="vc-list">'+rows+more+'</div></div>'; }).join("");
  $("#vgrid").querySelectorAll(".vcard").forEach(c=>c.onclick=()=>openVignette(named[+c.dataset.i])); }
-function openVignette(v){ state.curVig=v; state.svSel=null; $("#vgallery").style.display="none"; $("#vdetail").classList.add("on"); renderFloor(); setTimeout(renderFloor,40); }
+function openVignette(v){ state.curVig=v; state.svSel=null; $("#vgallery").style.display="none"; $("#vdetail").classList.add("on"); if(v && /rug library/i.test(v.name||"")){ var fw=document.getElementById("sfloorwrap"); if(fw)fw.style.display="none"; var sd=document.getElementById("sside"); if(sd)sd.style.display="none"; var rl=document.getElementById("rugLib"); if(rl)rl.style.display="block"; renderRugLibrary(); } else { var fw2=document.getElementById("sfloorwrap"); if(fw2)fw2.style.display=""; var sd2=document.getElementById("sside"); if(sd2)sd2.style.display=""; var rl2=document.getElementById("rugLib"); if(rl2)rl2.style.display="none"; renderFloor(); setTimeout(renderFloor,40); } }
 function closeVignette(){ state.curVig=null; $("#vgallery").style.display="block"; $("#vdetail").classList.remove("on"); }
+
+function renderRugLibrary(){
+ var host=document.getElementById("rugLib"); if(!host)return;
+ var rugs=(window.CATALOG||[]).filter(function(p){return p.rug_swatches&&p.rug_swatches.length;});
+ var items=[]; rugs.forEach(function(p){ var coll=(p.model||"").replace(/\s*collection\s*rug/i,"").trim()||p.model; p.rug_swatches.forEach(function(s){ items.push({coll:coll,id:p.id,sku:s.sku,color:s.color,tier:s.tier,branded:s.branded,hex:s.hex,image:s.image}); }); });
+ var collections=Array.from(new Set(items.map(function(x){return x.coll;}))).sort();
+ var tiers=Array.from(new Set(items.map(function(x){return x.tier;}).filter(Boolean))).sort();
+ var brands=Array.from(new Set(items.map(function(x){return x.branded;}).filter(Boolean))).sort();
+ var st=window._rlFilter||(window._rlFilter={q:"",coll:"",tier:"",brand:""});
+ function chip(label,val,key,cur){ return '<button class="rl-chip'+(cur===val?" on":"")+'" data-k="'+key+'" data-v="'+esc(val)+'">'+esc(label)+'</button>'; }
+ var head='<div class="rl-head"><button class="rl-back" id="rlBack">‹ Showroom</button><div class="rl-title">Rug Library<span class="rl-sub">'+items.length+' swatches · '+collections.length+' collections</span></div></div>';
+ var bar='<div class="rl-bar"><input id="rlSearch" class="rl-search" placeholder="Search collection, color, SKU…" value="'+esc(st.q)+'">';
+ bar+='<div class="rl-chips">'+chip("All collections","","coll",st.coll)+collections.map(function(c){return chip(c,c,"coll",st.coll);}).join("")+'</div>';
+ if(brands.length) bar+='<div class="rl-chips rl-brands">'+chip("All designers","","brand",st.brand)+brands.map(function(b){return chip(b,b,"brand",st.brand);}).join("")+'</div>';
+ if(tiers.length) bar+='<div class="rl-chips">'+chip("All tiers","","tier",st.tier)+tiers.map(function(t){return chip("Tier "+t,t,"tier",st.tier);}).join("")+'</div>';
+ bar+='</div>';
+ var q=(st.q||"").toLowerCase();
+ var shown=items.filter(function(x){ return (!st.coll||x.coll===st.coll)&&(!st.tier||x.tier===st.tier)&&(!st.brand||x.branded===st.brand)&&(!q||((x.coll+" "+x.color+" "+x.sku+" "+(x.branded||"")).toLowerCase().indexOf(q)>=0)); });
+ var grid='<div class="rl-grid">'+(shown.length?shown.map(function(x){ var ph=x.image?'<span class="rl-img" style="background-image:url('+esc(x.image)+')"></span>':'<span class="rl-img rl-chiponly" style="background:'+esc(x.hex||"#c9bda3")+'"></span>'; var badge=x.branded?'<span class="rl-badge">'+esc(x.branded)+'</span>':''; return '<div class="rl-card">'+ph+badge+'<div class="rl-meta"><div class="rl-coll">'+esc(x.coll)+'</div><div class="rl-color">'+esc(x.color||"")+'</div><div class="rl-sku">'+esc(x.sku||"")+(x.tier?" · T"+esc(x.tier):"")+'</div></div></div>'; }).join(""):'<div class="rl-empty">No swatches match.</div>')+'</div>';
+ host.innerHTML=head+bar+grid;
+ var bk=document.getElementById("rlBack"); if(bk)bk.onclick=closeVignette;
+ var si=document.getElementById("rlSearch"); if(si){ si.oninput=function(){ st.q=si.value; var pos=si.selectionStart; renderRugLibrary(); var ns=document.getElementById("rlSearch"); if(ns){ns.focus(); try{ns.setSelectionRange(pos,pos);}catch(e){}} }; }
+ host.querySelectorAll(".rl-chip").forEach(function(b){ b.onclick=function(){ st[b.dataset.k]=b.dataset.v; renderRugLibrary(); }; });
+}
+
 /* ============ overhead showroom floor map (home) ============ */
 let selVig=null,_mz=1,_mtx=0,_mty=0,_mMoved=false;
 function _zonePieces(v,P){ let s='';
@@ -2005,6 +2059,7 @@ function _mapFeed(arr){
     r.sales_mode=f.sales_mode||null;
     if(f.tear_sheet){ r.tear_sheet=f.tear_sheet; r.tear_sheet_source=f.tear_sheet_source; }
     if(f.config_dims)r.config_dims=f.config_dims;
+    if(f.rug_swatches)r.rug_swatches=f.rug_swatches;
     r.hidden=false;
     return r;
   });
