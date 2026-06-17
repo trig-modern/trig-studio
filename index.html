@@ -622,6 +622,15 @@
 .cdv.on{background:var(--accent,#e0512f);color:#fff;border-color:var(--accent,#e0512f);}
 .cd-mto{display:inline-block;background:rgba(224,81,47,.1);color:var(--accent-deep,#c8431f);font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:10px;margin:4px 0 8px;}
 .cd-mto b{font-weight:700;}
+
+/* fix: opaque Add-a-piece panel (no warm bleed through glass) */
+.sheet .panel{ background:var(--panel,#fff)!important; -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+.sheet .ph{ background:var(--panel,#fff)!important; }
+/* configurator detail = full-page stacked: gallery on top, configs below, specs below */
+#catdetail.cfgmode #cdbody{ flex-direction:column; overflow:auto; align-items:stretch; }
+#catdetail.cfgmode .cd-media{ flex:none; width:100%; height:auto; min-height:0; background:#fff; display:block; overflow:visible; }
+#catdetail.cfgmode #cdFrame{ width:100%; display:block; border:0; }
+#catdetail.cfgmode .cd-info{ flex:none; width:100%; max-width:none; border-left:0; border-top:.5px solid var(--sep,#e8e8ed); }
 </style>
 
 <style id="studioGateCSS">
@@ -858,7 +867,7 @@ button.b.pri:hover{ background:var(--tint-press); }
 .swrow .swmore{ font:600 10px/1 var(--font); color:#86868b; margin-left:2px; }
 .pcprice{ display:block; margin-top:5px; font:600 13.5px/1 var(--font); color:#1d1d1f; letter-spacing:-.2px; }
 .pcprice.trade{ color:var(--tint); }
-.pcprice .ptag{ font:700 9px/1 var(--font); text-transform:uppercase; letter-spacing:.04em; color:#fff; background:var(--tint); padding:2px 5px; border-radius:5px; margin-left:3px; }
+.pcprice .ptag{ font:600 9.5px/1 var(--font); text-transform:uppercase; letter-spacing:.06em; color:var(--muted,#86868b); background:transparent; padding:0; border-radius:0; margin-left:5px; }
 .pmuted{ color:#86868b!important; font-weight:400!important; font-size:12.5px; }
 /* ---- P1.1 glass two-plane: catalog panel = glass chrome; rows = opaque inset list ---- */
 .sheet .panel{ background:var(--glassfill)!important; -webkit-backdrop-filter:blur(26px) saturate(180%); backdrop-filter:blur(26px) saturate(180%); border-left:.5px solid var(--sep)!important; box-shadow:-16px 0 50px -22px rgba(0,0,0,.28)!important; }
@@ -1808,7 +1817,7 @@ function onConfigured(spec){ const eid=state.editId; state.editId=null; closeShe
  if(window._catAddMode){ window._catAddMode=0; if(lay&&isSectional(spec))spec.config=lay; addFromCatalogue({kind:"al",spec:spec}); return; }
  if(lay&&isSectional(spec)) spec.config=lay;
  requestAdd({kind:"al",spec:spec}); }
-window.addEventListener("message",e=>{ const d=e.data||{}; if(d.type==="trig-add-piece"&&d.piece){ onConfigured(d.piece); } else if(d.type==="trig-cfg-height"&&d.h){ var _f=document.getElementById("cdFrame"); if(_f && window.matchMedia("(max-width:760px)").matches){ _f.style.height=Math.max(420,Math.min(d.h,4200))+"px"; } } });
+window.addEventListener("message",e=>{ const d=e.data||{}; if(d.type==="trig-add-piece"&&d.piece){ onConfigured(d.piece); } else if(d.type==="trig-cfg-height"&&d.h){ var _f=document.getElementById("cdFrame"); if(_f){ _f.style.height=Math.max(420,Math.min(d.h,6000))+"px"; } } });
 function setZoom(z){ state.zoom=clamp(z,0.4,2.4); render(); }
 $("#zin").onclick=()=>setZoom(state.zoom*1.18); $("#zout").onclick=()=>setZoom(state.zoom/1.18); $("#zfit").onclick=fit;
 function fit(){ if(!state.room)return; const wrap=$("#stagewrap"),W=wrap.clientWidth-60,H=wrap.clientHeight-60;
@@ -1988,7 +1997,7 @@ function openDetail(p){
    $("#cdAdd").onclick=function(){ var _ap=_vsel?(byId(_vsel.app_id)||p):p; if(window._designerMode && window.trigSaveToRoom){ window.trigSaveToRoom(_ap); return; } if(p.cfg){ var ifr=$("#cdFrame"); try{ var arb=ifr.contentDocument.getElementById("addRoomBtn"); if(arb){ window._catAddMode=1; arb.click(); return; } }catch(e){} } addFromCatalogue({kind:"prop",spec:propSpec(_ap)}); }; $("#cdbody").querySelectorAll(".cdv").forEach(function(b){ b.onclick=function(){ window._cdVi=+b.dataset.vi; openDetail(p); }; });
   document.querySelectorAll('#cdbar .pvseg [data-pv]').forEach(function(b){b.classList.toggle('on',b.dataset.pv===(window.priceView||'client'));});
   $("#cdBack").onclick=closeDetail;
-  $("#catalogue").classList.add("gone"); $("#catdetail").classList.remove("gone");
+  $("#catalogue").classList.add("gone"); $("#catdetail").classList.remove("gone"); $("#catdetail").classList.toggle("cfgmode", !!p.cfg);
   if(window._studioCap)_studioCap("detail_view",{model:p.model});
 }
 function closeDetail(){ $("#catdetail").classList.add("gone"); $("#catalogue").classList.remove("gone"); window._catAddMode=0; window._catDetailProd=null; }
