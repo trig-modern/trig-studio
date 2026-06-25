@@ -29,8 +29,8 @@
  .search{margin:10px 0;}
  .grid{display:grid;grid-template-columns:repeat(auto-fill,64px);justify-content:center;gap:10px;max-height:360px;overflow:auto;padding:4px;}
  .sw{cursor:pointer;border-radius:11px;border:2px solid transparent;text-align:center;width:64px;}
- .sw.on{border-color:var(--accent);} .sw.on .c{box-shadow:0 0 0 1px var(--accent);}
- .sw .c{width:60px;height:60px;border-radius:9px;border:1px solid rgba(0,0,0,.12);background-repeat:no-repeat;}
+ .sw.on{border-color:transparent;} .sw.on .c{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent);transform:translateY(-1px);} .sw.on .n{color:var(--accent);font-weight:700;} .sw:hover .c{box-shadow:0 0 0 2px rgba(0,0,0,.18);} .sw.on:hover .c{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--accent);}
+ .sw .c{width:60px;height:60px;border-radius:9px;border:1px solid rgba(0,0,0,.12);background-repeat:no-repeat;transition:box-shadow .12s ease,transform .12s ease;}
  .selsw{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background-repeat:no-repeat;flex-shrink:0;}
  .sw .n{font-size:9.5px;color:var(--muted);line-height:1.1;padding:3px 1px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
  .selbar{margin-top:16px;padding:14px;border:1px solid var(--hair);border-radius:14px;background:var(--panel);}
@@ -379,6 +379,7 @@ function render(){
  let list=SWATCHES.filter(s=>s.type===state.mat);
  if(state.q) list=list.filter(s=>(s.cover+" "+s.color).toLowerCase().includes(state.q));
  if(state.grade){ const _inG=list.filter(s=>s.grade===state.grade); if(_inG.length) list=_inG; }
+ (function(){var seen={},out=[];list.forEach(function(s){var k=(s.cover+"|"+s.color+"|"+s.hex).toLowerCase();if(!seen[k]){seen[k]=1;out.push(s);}});list=out;})();
  document.getElementById("sw").innerHTML=list.slice(0,700).map(s=>
    '<div class="sw'+(state.sw&&state.sw.id===s.id?" on":"")+'" data-id="'+s.id+'" title="'+(s.cover+" "+s.color).replace(/"/g,"")+'"><div class="c" style="'+swbg(s,60)+'"></div><div class="n">'+(s.color||s.cover)+'</div></div>').join("")
    || '<div class="note">No swatches match.</div>';
