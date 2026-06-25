@@ -3037,7 +3037,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       c.s.coverGrade=titleCase(c.s.grade);        // human label for the quote/spec
       try{ if(window.trigLog) window.trigLog("grade_select",{app_id:c.app_id,config:{grade:c.s.grade},meta:{net:net,retail:retail}});}catch(e){}
       try{ if(window.saveRooms) saveRooms(); }catch(e){}
-      try{ if(window.state&&state.room&&window.render) render(); }catch(e){}           // recompute room total
+      try{ if((typeof state!=="undefined")&&state.room&&window.render) render(); }catch(e){}           // recompute room total
       try{ if(window.renderInspector) renderInspector(); }catch(e){}                    // refresh price line + re-inject (display-only)
     }, function(){ setReadout('<span style="color:#86868b">Trade — confirm with Trig</span>'); });
   }
@@ -3130,11 +3130,13 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function pkey(s){ try{ if(window._pkey) return window._pkey(s); }catch(e){} return [s.modelLabel||s.model,s.vendor||"",s.coverName||"",s.coverGrade||"",s.wIn||"",s.dIn||""].join("|"); }
   function rows(){ try{ if(window.specRows) return window.specRows(); }catch(e){} return []; }
   function inQuote(){ return document.body.classList.contains("quote-mode"); }
+  // the app declares `state` as a lexical (let) global — NOT on window — so reference it directly
+  function ST(){ try{ return state; }catch(e){ return null; } }
 
   /* ---------- persistence ---------- */
   var meta={name:"",client:""};
-  function isQuoteRoom(){ return !!(window.state && state.room && state.room.quoteOnly); }
-  function saveQuote(){ if(!isQuoteRoom())return; try{ localStorage.setItem(KEY, JSON.stringify({pieces:(window.state&&state.pieces)||[], name:meta.name, client:meta.client})); }catch(e){} }
+  function isQuoteRoom(){ var s=ST(); return !!(s && s.room && s.room.quoteOnly); }
+  function saveQuote(){ if(!isQuoteRoom())return; var s=ST(); try{ localStorage.setItem(KEY, JSON.stringify({pieces:(s&&s.pieces)||[], name:meta.name, client:meta.client})); }catch(e){} }
   function loadQuote(){ var d={pieces:[],name:"",client:""}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; return d; }
 
   /* ---------- styles ---------- */
@@ -3256,7 +3258,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   }
 
   /* ---------- actions ---------- */
-  function piecesOf(k){ return ((window.state&&state.pieces)||[]).filter(function(pc){ return pkey(pc.spec)===k; }); }
+  function piecesOf(k){ var s=ST(); return ((s&&s.pieces)||[]).filter(function(pc){ return pkey(pc.spec)===k; }); }
   function addItems(){ try{ if(window.openSheet) openSheet(); else if(el("addBtn")) el("addBtn").click(); }catch(e){} }
   function qtyPlus(k){ var ps=piecesOf(k); if(!ps.length)return; var rep=ps[0];
     var spec=JSON.parse(JSON.stringify(rep.spec));
@@ -3270,7 +3272,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   /* ---------- launch / leave ---------- */
   // Dashboard launcher: a fresh ROOM-LESS quote (saved separately in localStorage).
   function startBlankQuote(){
-    if(!window.state){ return; }
+    if(!ST()){ return; }
     var d=loadQuote();
     state.editVig=null; state.activeId=null; state.sel=null;
     state.room={type:"Quote",size:"quote",w:60,d:60,shape:null,floor:"oak",quoteOnly:true};
@@ -3289,7 +3291,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   }
   // In-room toolbar button: toggle a line-item CART of the CURRENT room (no state replacement).
   function toggleQuoteView(){
-    if(!window.state){ return; }
+    if(!ST()){ return; }
     if(!state.room){ startBlankQuote(); return; }      // no room -> behave like a blank quote
     if(inQuote()){ document.body.classList.remove("quote-mode"); try{ if(window.render) window.render(); }catch(e){} return; }
     if(!isQuoteRoom()){ meta.name=""; meta.client=""; } // room cart: don't inherit a prior quote's name
