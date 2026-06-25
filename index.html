@@ -3080,225 +3080,32 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 
 </script>
 <script>
-/* === TRIG-CFG-NATIVE-V1 (Architect) === */
-/* TRIG-CFG-NATIVE-V1 — native pre-add configurator (Architect 2026-06-25)
- * Replaces the cfg/ iframe (which only offered grades C/D/F at a x2.5 estimate, no Supabase)
- * with a native panel rendered into #sheetBody. Grades + shapes come from VERIFIED data
- * (get_config_options); price comes from get_price. Add-to-room reuses the app's own
- * window.onConfigured(spec) path so sizing/placement are unchanged. Verified retail->spec.price,
- * net->spec.trade_price. No verified row for a piece -> falls back to the ORIGINAL iframe so
- * nothing regresses. No verified row for a chosen combo -> "Trade — confirm with Trig" (never a
- * guessed number). Designers always see retail; net only renders for trade-approved (server gate).
- *
- * Reachability (verified against the app): openConfigurator/onConfigured/sheetOpen/closeSheet/
- * isSectional/secConfigs/applySectionalConfig/state are global; sheet/sheetBody/back are const,
- * reached by DOM id (#sheet/#sheetBody/#back). Products carry wIn/dIn/heightIn. placeAt sizes off
- * spec.wIn/dIn; sectionals get dims via applySectionalConfig (which also rewrites price from legacy
- * data) -> we re-assert the verified price on the placed piece AFTER onConfigured runs. */
+/* === TRIG-CFG-FEED-V1 (Architect 2026-06-25) ===
+ * Restores the full cfg/ iframe configurator and feeds it VERIFIED pricing. The iframe now builds
+ * grade chips from each model's real priced grades (all grades show) and renders price from the
+ * verified table this module supplies. On 'trig-cfg-ready' from the iframe we fetch
+ * get_config_options(app_id) and post {config_key:{net,retail}}. No verified data for a piece ->
+ * iframe shows its labeled (est.) price so nothing regresses. Net only present when trade-approved
+ * (server gate in the RPC). */
 (function(){
   "use strict";
   var URL="https://xyfogedlowneaevmjkci.supabase.co", KEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu", SB=null;
   function sb(){ try{ if(!SB && window.supabase) SB=window.supabase.createClient(URL,KEY);}catch(e){} return SB; }
-  function norm(v){ return String(v==null?"":v).trim().toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,""); }
-  function cfgKey(sel){ var p=[]; Object.keys(sel||{}).forEach(function(a){ var v=sel[a]; if(v==null||v==="")return; p.push(norm(a)+":"+norm(v)); }); return p.sort().join("|"); }
-  function money(n){ return (n==null)?null:"$"+Math.round(n).toLocaleString(); }
-  function el(id){ return document.getElementById(id); }
-
-  // ── label helpers ──────────────────────────────────────────────────────────
-  // grade token: "leather_g" / "leather_d_f" / "fabric_iii" / "microfiber_x"
-  function matOf(tok){ var p=String(tok||"").split("_"); var m=p[0]||""; return m.charAt(0).toUpperCase()+m.slice(1); } // Leather/Fabric/Microfiber
-  function gradeOf(tok){ var p=String(tok||"").split("_").slice(1); return p.map(function(x){ return /^[ivx]+$/i.test(x)?x.toUpperCase():x.toUpperCase(); }).join("/"); } // G, D/F, III
-  function labelGrade(tok){ var g=gradeOf(tok); return matOf(tok)+(g?(" "+g):""); }
-  function shapeLabel(tok){ return String(tok||"").replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); } // Sofa, Loveseat, L R
-
-  // ── data ───────────────────────────────────────────────────────────────────
-  var optCache={};
-  function loadOpts(app_id, cb){
-    if(app_id in optCache) return cb(optCache[app_id]);
-    var c=sb(); if(!c) return cb(null);
-    c.rpc("get_config_options",{_app_id:app_id}).then(function(r){ optCache[app_id]=(r&&r.data)||[]; cb(optCache[app_id]); }, function(){ cb(null); });
+  var cache={};
+  function feed(){
+    var p=window._cfgProd; if(!p || p.id==null) return;
+    var ifr=document.getElementById("cfgFrame"); if(!ifr || !ifr.contentWindow) return;
+    var app=String(p.id);
+    function send(table){ try{ ifr.contentWindow.postMessage({type:"trig-verified-prices",app_id:app,table:table,empty:Object.keys(table).length===0},"*"); }catch(e){} }
+    if(app in cache) return send(cache[app]);
+    var c=sb(); if(!c) return;
+    c.rpc("get_config_options",{_app_id:app}).then(function(r){
+      var rows=(r&&r.data)||[]; var table={};
+      rows.forEach(function(o){ if(o&&o.config_key) table[o.config_key]={net:(o.net!=null?o.net:null),retail:(o.retail!=null?o.retail:null)}; });
+      cache[app]=table; send(table);
+    }, function(){ cache[app]={}; send({}); });
   }
-  function getPrice(app_id, key, cb){
-    var c=sb(); if(!c) return cb(null,null);
-    c.rpc("get_price",{_app_id:app_id,_config_key:key}).then(function(r){ var row=(r&&r.data&&r.data[0])||{}; cb(row.net,row.retail); }, function(){ cb(null,null); });
-  }
-  // parse the verified config_key list into { grades:[tok...], shapes:[tok...]|null, combos:Set }
-  function parseOpts(opts){
-    var grades=[], shapes=[], gseen={}, sseen={}, combos={};
-    (opts||[]).forEach(function(o){
-      var g=null, s=null;
-      (o.config_key||"").split("|").forEach(function(part){
-        if(part.indexOf("grade:")===0) g=part.slice(6);
-        else if(part.indexOf("shape:")===0) s=part.slice(6);
-      });
-      if(g && !gseen[g]){ gseen[g]=1; grades.push(g); }
-      if(s && !sseen[s]){ sseen[s]=1; shapes.push(s); }
-      if(o.config_key) combos[o.config_key]=1;
-    });
-    // stable material/grade order
-    var matOrder={leather:0,fabric:1,microfiber:2,vinyl:3};
-    grades.sort(function(a,b){ var ma=matOrder[a.split("_")[0]]!=null?matOrder[a.split("_")[0]]:9, mb=matOrder[b.split("_")[0]]!=null?matOrder[b.split("_")[0]]:9; return ma-mb || a.localeCompare(b); });
-    return { grades:grades, shapes:shapes.length?shapes:null, combos:combos };
-  }
-
-  // ── sectional dims: match a DB shape token to the app's own secConfigs opt (label + w/d) ──
-  function secOptFor(specLike, shapeTok){
-    try{ var c=window.secConfigs&&secConfigs(specLike); if(!c||!c.opts)return null;
-      return c.opts.filter(function(o){return o.k===shapeTok;})[0]||null; }catch(e){ return null; }
-  }
-
-  // ── render ───────────────────────────────────────────────────────────────────
-  function buildNative(p, opts){
-    var body=el("sheetBody"); if(!body) return;
-    var app_id=String(p.id);
-    var parsed=parseOpts(opts);
-    if(!parsed.grades.length) return; // nothing verified -> caller already handled fallback
-    var hasShapes=!!parsed.shapes;
-
-    // edit-mode preselect
-    var editPc=(window.state&&state.editId)?state.pieces.find(function(x){return x.id===state.editId;}):null;
-    var sel={ grade:(editPc&&editPc.spec&&editPc.spec.grade)||null,
-              shape: hasShapes ? ((editPc&&editPc.spec&&editPc.spec.config) || _defShape(p,parsed)) : null };
-    if(sel.grade && parsed.grades.indexOf(sel.grade)<0) sel.grade=null;
-    if(sel.shape && parsed.shapes.indexOf(sel.shape)<0) sel.shape=_defShape(p,parsed);
-
-    // group grades by material
-    var byMat={}; parsed.grades.forEach(function(g){ var m=g.split("_")[0]; (byMat[m]=byMat[m]||[]).push(g); });
-    var matKeys=Object.keys(byMat);
-
-    var html='<div style="padding:16px 16px 96px">';
-    if(hasShapes){
-      html+='<div class="dsplace" style="margin-bottom:14px"><div class="dsplace-h">Configuration</div><div class="secchips" id="cfgShapes">'
-        + parsed.shapes.map(function(s){ var o=secOptFor({model:p.cfg,modelLabel:p.model,id:p.id,category:p.category},s); var lab=(o&&o.label)||shapeLabel(s);
-            return '<button class="secchip'+(sel.shape===s?" on":"")+'" data-shape="'+s+'">'+lab+'</button>'; }).join("")
-        +'</div></div>';
-    }
-    html+='<div class="dsplace" style="margin-bottom:8px"><div class="dsplace-h">Cover material &amp; grade</div>';
-    matKeys.forEach(function(m){
-      html+='<div style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#86868b;margin:8px 0 4px">'+(m.charAt(0).toUpperCase()+m.slice(1))+'</div>'
-        +'<div class="secchips" data-matrow="'+m+'">'
-        + byMat[m].map(function(g){ return '<button class="secchip'+(sel.grade===g?" on":"")+'" data-grade="'+g+'">'+gradeOf(g)+'</button>'; }).join("")
-        +'</div>';
-    });
-    html+='</div>';
-    html+='<div id="cfgPrice" style="margin:14px 0 4px;font-size:15px;min-height:22px"></div>';
-    html+='<div id="cfgDims" style="font-size:12px;color:#86868b"></div>';
-    html+='<div style="font-size:11px;color:#86868b;margin-top:10px">Verified Trig pricing. Pick a grade — the price updates to the exact verified figure for that cover.</div>';
-    html+='</div>';
-    // sticky add bar
-    html+='<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid #ececec;display:flex;gap:10px;align-items:center;z-index:5">'
-        +'<button id="cfgAdd" style="flex:1;padding:13px;border:0;border-radius:12px;background:#1d1d1f;color:#fff;font-size:15px;font-weight:600;cursor:pointer;opacity:.45" disabled>Add to room</button></div>';
-    body.style.position="relative";
-    body.innerHTML=html;
-
-    function curDims(){
-      var w=p.wIn, d=p.dIn;
-      if(hasShapes && sel.shape){ var o=secOptFor({model:p.cfg,modelLabel:p.model,id:p.id,category:p.category},sel.shape); if(o){ w=o.w; d=o.d; } }
-      return {w:w,d:d};
-    }
-    function showDims(){ var dm=curDims(); el("cfgDims").innerHTML='Footprint '+Math.round(dm.w)+'"W × '+Math.round(dm.d)+'"D'+(p.heightIn?(' × '+Math.round(p.heightIn)+'"H'):''); }
-    function priceHTML(net,retail){
-      if(retail==null && net==null) return '<b>Trade — confirm with Trig</b> <span style="color:#86868b">(this combination is configured by quote)</span>';
-      var parts=[]; if(retail!=null) parts.push('Retail '+money(retail));
-      parts.push(net!=null ? '<b style="color:#e2562a">Trade '+money(net)+'</b>' : '<span style="color:#86868b">Trade — confirm with Trig</span>');
-      return parts.join(' &nbsp;·&nbsp; ');
-    }
-    var lastPrice={net:null,retail:null,ok:false};
-    function refresh(){
-      var add=el("cfgAdd");
-      showDims();
-      if(!sel.grade){ el("cfgPrice").innerHTML='<span style="color:#86868b">Select a grade for verified pricing</span>'; add.disabled=true; add.style.opacity=".45"; lastPrice.ok=false; return; }
-      if(hasShapes && !sel.shape){ el("cfgPrice").innerHTML='<span style="color:#86868b">Select a configuration</span>'; add.disabled=true; add.style.opacity=".45"; lastPrice.ok=false; return; }
-      var ksel={grade:sel.grade}; if(sel.shape)ksel.shape=sel.shape;
-      var key=cfgKey(ksel);
-      el("cfgPrice").innerHTML='<span style="color:#86868b">…</span>';
-      getPrice(app_id,key,function(net,retail){
-        lastPrice={net:net,retail:retail,ok:true,key:key};
-        el("cfgPrice").innerHTML=priceHTML(net,retail);
-        add.disabled=false; add.style.opacity="1";
-      });
-    }
-    // shape clicks
-    var shapeRow=el("cfgShapes");
-    if(shapeRow) shapeRow.addEventListener("click",function(e){ var b=e.target.closest("[data-shape]"); if(!b)return;
-      sel.shape=b.dataset.shape; Array.prototype.forEach.call(shapeRow.querySelectorAll(".secchip"),function(x){x.classList.toggle("on",x===b);}); refresh(); });
-    // grade clicks (bind per material row; rows are recreated each open -> no listener leak/stale closure)
-    Array.prototype.forEach.call(body.querySelectorAll("[data-matrow]"),function(row){
-      row.addEventListener("click",function(e){ var b=e.target.closest("[data-grade]"); if(!b)return;
-        sel.grade=b.dataset.grade; Array.prototype.forEach.call(body.querySelectorAll("[data-grade]"),function(x){x.classList.toggle("on",x===b);}); refresh(); });
-    });
-    // add
-    el("cfgAdd").addEventListener("click",function(){
-      if(!sel.grade) return;
-      var dm=curDims();
-      var spec={ model:p.cfg, modelLabel:p.model, id:p.id, category:p.category,
-                 grade:sel.grade, coverGrade:labelGrade(sel.grade), coverType:matOf(sel.grade),
-                 wIn:dm.w, dIn:dm.d, heightIn:p.heightIn };
-      if(hasShapes && sel.shape) spec.config=sel.shape;
-      // edit mode: preserve the piece's existing cover swatch (color/name) so re-config doesn't strip the tint
-      if(editPc && editPc.spec){ if(editPc.spec.coverHex) spec.coverHex=editPc.spec.coverHex; if(editPc.spec.coverName) spec.coverName=editPc.spec.coverName; if(editPc.spec.coverId) spec.coverId=editPc.spec.coverId; }
-      // resolve verified price, then add, then re-assert (applySectionalConfig may overwrite on add)
-      var ksel={grade:sel.grade}; if(sel.shape)ksel.shape=sel.shape; var key=cfgKey(ksel);
-      spec._cfgKey=key;
-      getPrice(app_id,key,function(net,retail){
-        if(retail!=null) spec.price=retail;
-        if(net!=null) spec.trade_price=net;
-        var prevSel=(window.state&&state.sel)||null, editing=!!(window.state&&state.editId);
-        try{ if(window.trigLog) window.trigLog("config_change",{app_id:app_id,config:ksel,meta:{net:net,retail:retail,source:"native_configurator"}});}catch(e){}
-        try{ window.onConfigured(spec); }catch(e){ return; }
-        // re-assert verified price on the resulting piece (new placement or edited piece)
-        setTimeout(function(){
-          try{
-            if(!window.state) return; var pc=null;
-            if(editing && state.sel) pc=state.pieces.find(function(x){return x.id===state.sel;});
-            else if(state.sel && state.sel!==prevSel) pc=state.pieces.find(function(x){return x.id===state.sel;});
-            if(pc && pc.spec && pc.spec.model===p.cfg){
-              if(retail!=null) pc.spec.price=retail;
-              if(net!=null) pc.spec.trade_price=net;
-              pc.spec.grade=sel.grade; pc.spec.coverGrade=labelGrade(sel.grade); pc.spec._cfgKey=key;
-              if(window.saveRooms) saveRooms(); if(window.save) save();
-              if(window.render) render();
-            }
-          }catch(e){}
-        },0);
-      });
-    });
-
-    refresh();
-  }
-
-  function _defShape(p,parsed){
-    try{ var c=window.secConfigs&&secConfigs({model:p.cfg,modelLabel:p.model,id:p.id,category:p.category});
-      if(c && c.def && parsed.shapes && parsed.shapes.indexOf(c.def)>=0) return c.def; }catch(e){}
-    return parsed.shapes?parsed.shapes[0]:null;
-  }
-
-  // ── override ─────────────────────────────────────────────────────────────────
-  function install(){
-    if(window.openConfigurator && !window.openConfigurator.__trigNative){
-      var orig=window.openConfigurator;
-      window.openConfigurator=function(p){
-        try{
-          if(!p || p.id==null) return orig.call(window,p);
-          window._cfgProd=p; window._pendingLayout=null;
-          if(window.sheetOpen) sheetOpen("Configure · "+(p.model||""));
-          var bk=el("back"); if(bk) bk.style.display="block";
-          var body=el("sheetBody"); if(body) body.innerHTML='<div style="padding:24px;color:#86868b">Loading verified options…</div>';
-          loadOpts(String(p.id), function(opts){
-            // still on the same product? (user may have navigated)
-            if(window._cfgProd!==p) return;
-            var parsed=opts?parseOpts(opts):null;
-            if(!parsed || !parsed.grades.length){ return orig.call(window,p); } // no verified data -> legacy iframe
-            buildNative(p, opts);
-          });
-        }catch(e){ try{ return orig.call(window,p); }catch(e2){} }
-      };
-      window.openConfigurator.__trigNative=true;
-      return true;
-    }
-    return false;
-  }
-  var t=0; (function tick(){ try{ if(install()) return; }catch(e){} if(++t<20) setTimeout(tick,400); })();
+  window.addEventListener("message",function(e){ var d=e.data||{}; if(d && d.type==="trig-cfg-ready"){ feed(); } });
 })();
 </script>
 </body></html>

@@ -155,13 +155,6 @@ function priceKey(type,grade){ grade=(grade||"").trim();
    if(grade==="G")return"Leather G"; if(grade==="H")return"Leather H"; if(grade==="J")return"Leather J"; return null; }
  if(type==="microfiber")return"Fabric V";
  if(["I","II","III","V"].includes(grade))return"Fabric "+grade; return null; }
-let VTABLE=null, VEMPTY=false;
-function _tok(mat,g){ if(mat==="microfiber")return"fabric_v"; g=String(g||"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,""); return (mat==="leather"?"leather_":"fabric_")+g; }
-function _shapeTok(){ try{ var s=resolve(); if(!s)return null; var d=(s.desc||"").toUpperCase(); if(d.indexOf("LOVESEAT")>=0)return"loveseat"; if(d.indexOf("SOFA")>=0)return"sofa"; }catch(e){} return null; }
-function _ckey(mat,g){ var parts=["grade:"+_tok(mat,g)]; var sh=_shapeTok(); if(sh)parts.push("shape:"+sh); return parts.sort().join("|"); }
-function vRow(){ try{ var s=resolve(); var G=state.grade||(state.sw&&state.sw.grade); if(!s||!G)return null;
-  if(VTABLE){ var r=VTABLE[_ckey(state.mat,G)]; if(r&&r.retail!=null)return {retail:r.retail,net:(r.net!=null?r.net:null)}; if(!VEMPTY)return null; }
-  var k=priceKey(state.mat,G), w=k&&s.w?s.w[k]:null; if(w!=null)return {retail:Math.round((w+upcharge(s.seats||1))*2.5/5)*5, net:w, est:true}; }catch(e){} return null; }
 function money(n){ return "$"+Math.round(n/5)*5; }
 // ---- build options (estimate adders; final upcharge confirmed by Trig on the AL worksheet) ----
 const IC='<svg viewBox="0 0 56 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
@@ -368,17 +361,15 @@ function render(){
  // material on
  document.querySelectorAll("#mat button").forEach(b=>b.classList.toggle("on",b.dataset.m===state.mat));
  // grades available for this material
- const _wkN=(function(){var s=resolve();return (s&&s.w)?Object.keys(s.w):[];})();
- const gset=(state.mat==="microfiber")?(_wkN.indexOf("Fabric V")>=0?["V"]:[])
-   :(function(){var pf=state.mat==="leather"?"Leather ":"Fabric ";return [...new Set(_wkN.filter(k=>k.indexOf(pf)===0).map(k=>k.slice(pf.length)))]
-     .sort((a,b)=>(["C","D/F","G","H","J","I","II","III","V"].indexOf(a)-["C","D/F","G","H","J","I","II","III","V"].indexOf(b)));})();
+ const gset=[...new Set(SWATCHES.filter(s=>s.type===state.mat && s.grade).map(s=>s.grade))]
+   .sort((a,b)=>("CDFGHJ".indexOf(a)-"CDFGHJ".indexOf(b))|| (["I","II","III","V"].indexOf(a)-["I","II","III","V"].indexOf(b)));
  document.getElementById("grades").innerHTML='<span class="pill'+(state.grade===null?" on":"")+'" data-g="">All</span>'+
    gset.map(g=>'<span class="pill'+(state.grade===g?" on":"")+'" data-g="'+g+'">'+g+'</span>').join("");
  document.querySelectorAll("#grades .pill").forEach(p=>p.onclick=()=>{ state.grade=p.dataset.g||null; render(); });
  // swatches
  let list=SWATCHES.filter(s=>s.type===state.mat);
+ if(state.grade) list=list.filter(s=>s.grade===state.grade);
  if(state.q) list=list.filter(s=>(s.cover+" "+s.color).toLowerCase().includes(state.q));
- if(state.grade){ const _inG=list.filter(s=>s.grade===state.grade); if(_inG.length) list=_inG; }
  document.getElementById("sw").innerHTML=list.slice(0,700).map(s=>
    '<div class="sw'+(state.sw&&state.sw.id===s.id?" on":"")+'" data-id="'+s.id+'" title="'+(s.cover+" "+s.color).replace(/"/g,"")+'"><div class="c" style="'+swbg(s,60)+'"></div><div class="n">'+(s.color||s.cover)+'</div></div>').join("")
    || '<div class="note">No swatches match.</div>';
@@ -395,15 +386,11 @@ function render(){
  else { cov.textContent="—"; gr.textContent="—"; ss.style.display="none"; }
  const btn=document.getElementById("quoteBtn"), arb=document.getElementById("addRoomBtn");
  let ready=false;
- { const G=state.grade||(sw&&sw.grade);
-   if(sku && G){
-     var _row=VTABLE?(VTABLE[_ckey(state.mat,G)]||null):null;
-     if(_row && _row.retail!=null){ pr.innerHTML=money(_row.retail)+' <small>retail</small>'+(_row.net!=null?' <span style="color:#86868b">\u00b7 net '+money(_row.net)+'</span>':''); ready=true; }
-     else if(!VTABLE || VEMPTY){ const k=priceKey(state.mat,G); const w=k&&sku.w?sku.w[k]:null; if(w!=null){ pr.innerHTML=money((w+upcharge(sku.seats||1))*2.5)+' <small>retail (est.)</small>'; ready=true; } else { pr.innerHTML='<small>Ask Trig for pricing</small>'; } }
-     else { pr.innerHTML='<small>Confirm with Trig for this cover</small>'; }
-   } else { pr.textContent = sku ? (G?"Select a swatch":"Select a grade") : "\u2014"; }
-   ready = !!(sku && G && sw && ready);
- }
+ if(sw && sku){
+   const k=priceKey(sw.type,sw.grade); const w=k&&sku.w?sku.w[k]:null;
+   if(w){ const retail=(w+upcharge(sku.seats||1))*2.5; pr.innerHTML=money(retail)+' <small>retail</small>'; ready=true; }
+   else { pr.innerHTML='<small>Grade not yet priced — ask Trig</small>'; }
+ } else { pr.textContent=sku?"Select a swatch":"—"; }
  btn.disabled=!ready; arb.disabled=!ready;
 }
 render();
@@ -412,7 +399,9 @@ render();
 const EMBED = qs.get("embed")==="1" || (window.parent && window.parent!==window);
 const FOOT={chair:[40,38],ch15:[54,40],loveseat:[64,40],two:[76,40],twomid:[72,40],twogrand:[84,40],
   three:[92,40],threechaise:[92,64],chaise:[40,64],bumper:[44,64],corner:[64,64],cornerret:[64,64],ottoman:[42,28],other:[76,40]};
-function retailNum(){ var r=vRow(); return r?r.retail:null; }
+function retailNum(){ const sku=resolve(), sw=state.sw; if(!sku||!sw)return null;
+  const k=priceKey(sw.type,sw.grade), w=k&&sku.w?sku.w[k]:null; if(!w)return null;
+  return Math.round((w+upcharge(sku.seats||1))*2.5/5)*5; }
 if(EMBED){
   document.getElementById("quoteBtn").style.display="none";
   const arb=document.getElementById("addRoomBtn"); arb.style.display="block";
@@ -422,7 +411,7 @@ if(EMBED){
     const piece={ model:model, modelLabel:model.charAt(0)+model.slice(1).toLowerCase(),
       fam:state.fam, famLabel:(FAMS.find(x=>x.fam===state.fam)||{}).label, seats:sku.seats||2,
       orient:state.orient, size:state.size, desc:sku.desc, sku:sku.sku,
-      coverId:sw.id, coverName:(sw.cover+(sw.color?" "+sw.color:"")), coverHex:sw.hex, coverType:sw.type, grade:(state.grade||sw.grade), coverGrade:(state.grade||sw.grade), trade_price:(function(){var r=vRow();return r?r.net:null;})(),
+      coverId:sw.id, coverName:(sw.cover+(sw.color?" "+sw.color:"")), coverHex:sw.hex, coverType:sw.type, grade:sw.grade,
       opts:Object.assign({},state.opt), price:retailNum(), wIn:ft[0], dIn:ft[1], heightIn:(sku.dim?sku.dim.h:null) };
     parent.postMessage({type:"trig-add-piece",piece:piece},"*");
     arb.textContent="Added ✓"; setTimeout(()=>arb.textContent="Add to my room",1100);
@@ -433,17 +422,14 @@ if(EMBED){
   window.addEventListener("load",_postH);
   try{ new ResizeObserver(_postH).observe(document.body); }catch(e){}
   setTimeout(_postH,300); setTimeout(_postH,900);
-  window.addEventListener("message",function(e){ var d=e.data||{}; if(d&&d.type==="trig-verified-prices"){ VTABLE=d.table||{}; VEMPTY=!!d.empty||Object.keys(VTABLE).length===0; try{render();}catch(_){} } });
-  try{ parent.postMessage({type:"trig-cfg-ready"},"*"); }catch(e){}
-  setTimeout(function(){ try{ parent.postMessage({type:"trig-cfg-ready"},"*"); }catch(e){} },400);
 }
 // quote dialog
 const dlg=document.getElementById("dlg"), form=document.getElementById("qform");
 document.getElementById("quoteBtn").onclick=()=>{
- const sku=resolve(), sw=state.sw; const _G=state.grade||sw.grade;
- const retail=retailNum();
+ const sku=resolve(), sw=state.sw; const k=priceKey(sw.type,sw.grade); const w=sku.w[k];
+ const retail=(w+upcharge(sku.seats||1))*2.5;
  const optStr=OPT.map(g=>{let lbl="";g.ch.forEach(c=>{if(c[0]===state.opt[g.id])lbl=c[1];});return g.label+": "+lbl;}).join(", ");
- const summary=model.charAt(0)+model.slice(1).toLowerCase()+" · "+sku.desc+" · "+sw.cover+(sw.color?" "+sw.color:"")+" ("+sw.type+" "+_G+") · "+optStr+" · "+money(retail)+" retail · SKU "+sku.sku;
+ const summary=model.charAt(0)+model.slice(1).toLowerCase()+" · "+sku.desc+" · "+sw.cover+(sw.color?" "+sw.color:"")+" ("+sw.type+" "+sw.grade+") · "+optStr+" · "+money(retail)+" retail · SKU "+sku.sku;
  document.getElementById("dlgsum").textContent=summary; document.getElementById("hcfg").value=summary;
  document.getElementById("thanks").style.display="none";
  dlg.showModal();
