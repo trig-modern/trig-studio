@@ -3108,4 +3108,247 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   window.addEventListener("message",function(e){ var d=e.data||{}; if(d && d.type==="trig-cfg-ready"){ feed(); } });
 })();
 </script>
+<script>
+/* === TRIG-QUOTE-V1 (Architect) === */
+/* TRIG-QUOTE-V1 — room-less quote builder + back-to-dashboard (Architect 2026-06-25)
+ * A quote is modeled as a HIDDEN-CANVAS room: state.room is a nominal {quoteOnly:true} room so the
+ * existing add pipeline (picker + configurator + VERIFIED pricing), specRows(), and totals all work
+ * natively — no interception. body.quote-mode hides the floor plan and shows a clean line-item list
+ * (#quotePanel) rendered from specRows(). A MutationObserver on #room refreshes the list whenever a
+ * piece is added/removed (placeAt rewrites #room), so adds flow straight in. Persisted to
+ * localStorage (trig_quote_v1). Also adds a "‹ Dashboard" button to the room toolbar (#bar) →
+ * openPortal(), and "Build a quote" launchers on the portal (#ptbar) + toolbar.
+ * Reuse (all global fn decls): specRows, _pkey, money, esc, requestAdd, render, setTab, enter,
+ * openPortal, openSheet. localStorage only for v1 (Supabase-sync of quotes = follow-up). */
+(function(){
+  "use strict";
+  var KEY="trig_quote_v1";
+  function el(id){ return document.getElementById(id); }
+  function W(n){ return window[n]; }
+  function money(n){ return (n==null)?null:"$"+(Math.round(n/5)*5).toLocaleString(); }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function pkey(s){ try{ if(window._pkey) return window._pkey(s); }catch(e){} return [s.modelLabel||s.model,s.vendor||"",s.coverName||"",s.coverGrade||"",s.wIn||"",s.dIn||""].join("|"); }
+  function rows(){ try{ if(window.specRows) return window.specRows(); }catch(e){} return []; }
+  function inQuote(){ return document.body.classList.contains("quote-mode"); }
+
+  /* ---------- persistence ---------- */
+  var meta={name:"",client:""};
+  function saveQuote(){ try{ localStorage.setItem(KEY, JSON.stringify({pieces:(window.state&&state.pieces)||[], name:meta.name, client:meta.client})); }catch(e){} }
+  function loadQuote(){ var d={pieces:[],name:"",client:""}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; return d; }
+
+  /* ---------- styles ---------- */
+  function injectCSS(){
+    if(el("quoteCSS")) return;
+    var s=document.createElement("style"); s.id="quoteCSS";
+    s.textContent=[
+      "body.quote-mode #stagewrap>#room,body.quote-mode #stagewrap>.zoom,body.quote-mode #roomBar,body.quote-mode #floorBar,body.quote-mode #roomtag,body.quote-mode #stagewrap>.empty,body.quote-mode #dside{display:none!important;}",
+      "body.quote-mode #setup{display:none!important;}",
+      "body.quote-mode .tabs{display:none!important;}",
+      "body.quote-mode #newRoomBtn,body.quote-mode #sendBtn,body.quote-mode #addBtn,body.quote-mode #totalWrap{display:none!important;}",
+      "body.quote-mode #stagewrap{position:relative;overflow:auto;}",
+      "#quotePanel{display:none;}",
+      "body.quote-mode #quotePanel{display:block;position:absolute;inset:0;overflow:auto;background:#fbfaf6;padding:20px 20px 40px;}",
+      ".qp-wrap{max-width:920px;margin:0 auto;}",
+      ".qp-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px;}",
+      ".qp-head h2{font-size:22px;margin:0;font-weight:700;}",
+      ".qp-fields{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px;}",
+      ".qp-fields input{padding:9px 11px;border:1px solid #dcd8d2;border-radius:10px;font-size:14px;min-width:200px;background:#fff;}",
+      ".qp-tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ececec;border-radius:14px;overflow:hidden;}",
+      ".qp-tbl th{font:600 11px/1 var(--font,inherit);letter-spacing:.05em;text-transform:uppercase;color:#86868b;text-align:left;padding:12px 12px;border-bottom:1px solid #efece8;}",
+      ".qp-tbl td{padding:12px 12px;border-bottom:1px solid #f3f1ed;font-size:13.5px;vertical-align:middle;}",
+      ".qp-tbl tr:last-child td{border-bottom:0;}",
+      ".qp-tbl .r{text-align:right;white-space:nowrap;}",
+      ".qp-tbl .c{text-align:center;}",
+      ".qp-nm{font-weight:600;}",
+      ".qp-sub{color:#86868b;font-size:12px;}",
+      ".qp-qty{display:inline-flex;align-items:center;gap:8px;}",
+      ".qp-qty button{width:26px;height:26px;border:1px solid #dcd8d2;background:#fff;border-radius:7px;cursor:pointer;font-size:15px;line-height:1;}",
+      ".qp-qty button:hover{border-color:#b9b3ab;}",
+      ".qp-rm{color:#b00;cursor:pointer;border:0;background:none;font-size:13px;}",
+      ".qp-trade{color:var(--tint,#e0512f);font-weight:700;}",
+      ".qp-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-top:18px;}",
+      ".qp-tot{font-size:15px;} .qp-tot b{font-size:20px;}",
+      ".qp-actions{display:flex;gap:10px;flex-wrap:wrap;}",
+      ".qp-btn{padding:11px 16px;border-radius:11px;border:1px solid #dcd8d2;background:#fff;font-size:14px;font-weight:600;cursor:pointer;}",
+      ".qp-btn.pri{background:#1d1d1f;color:#fff;border-color:transparent;}",
+      ".qp-btn.tint{background:var(--tint,#e0512f);color:#fff;border-color:transparent;}",
+      ".qp-empty{text-align:center;color:#86868b;padding:60px 20px;background:#fff;border:1px dashed #dcd8d2;border-radius:14px;}",
+      "#qbDash{margin-right:6px;}"
+    ].join("\n");
+    document.head.appendChild(s);
+  }
+
+  /* ---------- panel ---------- */
+  var observing=false;
+  function ensurePanel(){
+    injectCSS();
+    var stage=el("stagewrap"); if(!stage) return null;
+    var p=el("quotePanel");
+    if(!p){ p=document.createElement("div"); p.id="quotePanel"; stage.appendChild(p); }
+    if(!observing){
+      var room=el("room");
+      if(room){ try{ new MutationObserver(function(){ if(inQuote()){ renderPanel(); saveQuote(); } }).observe(room,{childList:true}); observing=true; }catch(e){} }
+    }
+    return p;
+  }
+
+  function tradeApproved(){ // any verified net present -> show trade column
+    return rows().some(function(it){ return it.s && it.s.trade_price!=null; });
+  }
+
+  function renderPanel(){
+    var p=ensurePanel(); if(!p || !inQuote()) return;
+    var rs=rows(), showTrade=tradeApproved();
+    var retailTot=0, tradeTot=0, n=0;
+    var body=rs.map(function(it){
+      var s=it.s, q=it.qty, price=s.price||0, line=price*q, k=pkey(s);
+      retailTot+=line; n+=q;
+      if(s.trade_price!=null) tradeTot+=s.trade_price*q;
+      var dims=(s.wIn?(Math.round(s.wIn)+'″W'):'')+(s.dIn?(' × '+Math.round(s.dIn)+'″D'):'')+(s.heightIn?(' × '+Math.round(s.heightIn)+'″H'):'');
+      var cover=[s.coverName||'', s.coverGrade?('· '+s.coverGrade):''].join(' ').trim();
+      return '<tr data-k="'+esc(k)+'">'
+        +'<td><div class="qp-nm">'+esc(s.modelLabel||s.model||'—')+'</div>'+(cover?'<div class="qp-sub">'+esc(cover)+'</div>':'')+'</td>'
+        +'<td>'+esc(s.vendor||'—')+'</td>'
+        +'<td class="qp-sub">'+(dims||'—')+'</td>'
+        +'<td class="c"><span class="qp-qty"><button data-act="minus">–</button><span>'+q+'</span><button data-act="plus">+</button></span></td>'
+        +'<td class="r">'+(price?money(price):'<span class="qp-sub">Confirm</span>')+'</td>'
+        +'<td class="r">'+(price?money(line):'—')+(showTrade&&s.trade_price!=null?('<div class="qp-trade">'+money(s.trade_price*q)+'</div>'):'')+'</td>'
+        +'<td class="r"><button class="qp-rm" data-act="remove">remove</button></td>'
+        +'</tr>';
+    }).join('');
+
+    var tableOrEmpty = rs.length
+      ? '<table class="qp-tbl"><thead><tr><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Unit</th><th class="r">Line'+(showTrade?' / Trade':'')+'</th><th></th></tr></thead><tbody>'+body+'</tbody></table>'
+      : '<div class="qp-empty"><b>No items in this quote yet</b><div class="qp-sub" style="margin-top:6px">Add Trig pieces — grades &amp; verified pricing carry straight in.</div><button class="qp-btn pri" id="qpAdd0" style="margin-top:16px">+ Add items</button></div>';
+
+    p.innerHTML='<div class="qp-wrap">'
+      +'<div class="qp-head"><h2>Quote</h2><span class="qp-sub">'+n+' item'+(n===1?'':'s')+'</span></div>'
+      +'<div class="qp-fields"><input id="qpName" placeholder="Quote name (optional)" value="'+esc(meta.name)+'"><input id="qpClient" placeholder="Client name (optional)" value="'+esc(meta.client)+'"></div>'
+      +tableOrEmpty
+      +'<div class="qp-foot"><div class="qp-tot">Retail total <b>'+money(retailTot)+'</b>'+(showTrade?(' &nbsp;·&nbsp; <span class="qp-trade">Trade '+money(tradeTot)+'</span>'):'')+'</div>'
+      +'<div class="qp-actions"><button class="qp-btn" id="qpAdd">+ Add items</button>'
+      +'<button class="qp-btn" id="qpSheet"'+(rs.length?'':' disabled')+'>Spec sheet (PDF)</button>'
+      +'<button class="qp-btn tint" id="qpEmail"'+(rs.length?'':' disabled')+'>Email to Trig</button>'
+      +'<button class="qp-btn" id="qpClear"'+(rs.length?'':' disabled')+'>Clear</button></div></div>'
+      +'</div>';
+
+    // field persistence
+    var nm=el("qpName"), cl=el("qpClient");
+    if(nm) nm.oninput=function(){ meta.name=nm.value; saveQuote(); };
+    if(cl) cl.oninput=function(){ meta.client=cl.value; saveQuote(); };
+    // row actions
+    p.querySelectorAll("tr[data-k]").forEach(function(tr){
+      var k=tr.getAttribute("data-k");
+      tr.querySelectorAll("[data-act]").forEach(function(b){
+        b.onclick=function(){ var act=b.getAttribute("data-act");
+          if(act==="plus") qtyPlus(k); else if(act==="minus") qtyMinus(k); else if(act==="remove") removeGroup(k); };
+      });
+    });
+    var add0=el("qpAdd0"); if(add0) add0.onclick=addItems;
+    var add=el("qpAdd"); if(add) add.onclick=addItems;
+    var sh=el("qpSheet"); if(sh) sh.onclick=buildQuoteSheet;
+    var em=el("qpEmail"); if(em) em.onclick=emailQuote;
+    var cls=el("qpClear"); if(cls) cls.onclick=clearQuote;
+  }
+
+  /* ---------- actions ---------- */
+  function piecesOf(k){ return ((window.state&&state.pieces)||[]).filter(function(pc){ return pkey(pc.spec)===k; }); }
+  function addItems(){ try{ if(window.openSheet) openSheet(); else if(el("addBtn")) el("addBtn").click(); }catch(e){} }
+  function qtyPlus(k){ var ps=piecesOf(k); if(!ps.length)return; var rep=ps[0];
+    var spec=JSON.parse(JSON.stringify(rep.spec));
+    try{ if(window.requestAdd){ window.requestAdd({kind:rep.kind||"prop",spec:spec}); } }catch(e){} }
+  function qtyMinus(k){ var ps=piecesOf(k); if(!ps.length)return; var id=ps[ps.length-1].id;
+    state.pieces=state.pieces.filter(function(x){return x.id!==id;}); redraw(); }
+  function removeGroup(k){ state.pieces=state.pieces.filter(function(x){return pkey(x.spec)!==k;}); redraw(); }
+  function clearQuote(){ if(!confirm("Clear all items from this quote?"))return; state.pieces=[]; redraw(); }
+  function redraw(){ try{ if(window.render) window.render(); }catch(e){} renderPanel(); saveQuote(); }
+
+  /* ---------- launch / leave ---------- */
+  function startQuote(){
+    if(!window.state){ return; }
+    var d=loadQuote();
+    state.editVig=null; state.activeId=null; state.sel=null;
+    state.room={type:"Quote",size:"quote",w:60,d:60,shape:null,floor:"oak",quoteOnly:true};
+    state.pieces=Array.isArray(d.pieces)?d.pieces:[];
+    try{ if(window.enter) enter("design"); }catch(e){}
+    try{ if(window.setTab) setTab("design"); }catch(e){}
+    var b=el("bar"); if(b) b.style.display="flex";
+    document.body.classList.add("quote-mode");
+    addButtons();
+    ensurePanel();
+    try{ if(window.render) window.render(); }catch(e){}
+    renderPanel();
+    try{ if(window.trigLog) trigLog("quote_open",{meta:{items:state.pieces.length}}); }catch(e){}
+  }
+  function goDashboard(){
+    if(inQuote()){ saveQuote(); document.body.classList.remove("quote-mode"); }
+    try{ if(window.openPortal){ openPortal(); return; } }catch(e){}
+    try{ if(window.showHome) showHome(); }catch(e){}
+  }
+  window.trigStartQuote=startQuote;
+  window.trigGoDashboard=goDashboard;
+
+  /* ---------- export ---------- */
+  function quoteRows(){ return rows().map(function(it){ return {s:it.s,qty:it.qty}; }); }
+  function buildQuoteSheet(){
+    var rs=quoteRows(); if(!rs.length) return;
+    var showTrade=tradeApproved(), retailTot=0, tradeTot=0;
+    var body=rs.map(function(it,i){ var s=it.s, price=s.price||0, line=price*it.qty; retailTot+=line; if(s.trade_price!=null)tradeTot+=s.trade_price*it.qty;
+      var dims=(s.wIn?(Math.round(s.wIn)+'″W'):'')+(s.dIn?(' × '+Math.round(s.dIn)+'″D'):'')+(s.heightIn?(' × '+Math.round(s.heightIn)+'″H'):'');
+      var cover=[s.coverName||'', s.coverGrade?('· '+s.coverGrade):''].join(' ').trim();
+      return '<tr><td>'+(i+1)+'</td><td class="pm">'+esc(s.modelLabel||s.model||'—')+(cover?'<div class="sub">'+esc(cover)+'</div>':'')+'</td><td>'+esc(s.vendor||'—')+'</td><td>'+(dims||'—')+'</td><td class="c">'+it.qty+'</td><td class="r">'+(price?money(price):'—')+'</td><td class="r">'+(price?money(line):'Confirm')+'</td></tr>';
+    }).join('');
+    var date=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>Trig Modern — Quote</title><style>'
+      +'*{box-sizing:border-box}body{font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c1a18;margin:0;padding:40px;background:#fff}'
+      +'.wm{font-family:Georgia,serif;font-size:24px}.wm b{color:#b5651d}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1c1a18;padding-bottom:14px}'
+      +'.ttl{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#777}.meta{display:flex;gap:30px;margin:18px 0 20px;flex-wrap:wrap}.meta div{font-size:12px;color:#777}.meta b{display:block;font-size:16px;color:#1c1a18;margin-top:2px}'
+      +'table{width:100%;border-collapse:collapse;margin-top:8px}th{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#777;text-align:left;border-bottom:1.5px solid #1c1a18;padding:8px 10px}'
+      +'td{padding:9px 10px;border-bottom:1px solid #eee;font-size:13px;vertical-align:top}.pm{font-weight:600}.sub{color:#888;font-weight:400;font-size:11.5px}.c{text-align:center}.r{text-align:right;white-space:nowrap}'
+      +'tfoot td{border-top:2px solid #1c1a18;border-bottom:0;font-weight:700;font-size:15px;padding-top:12px}.trade{color:#e0512f}'
+      +'.note{margin-top:22px;font-size:11px;color:#999}@media print{body{padding:0}}</style></head><body>'
+      +'<div class="hd"><div class="wm">Trig <b>Modern</b></div><div style="text-align:right"><div class="ttl">Quote</div><div style="font-size:12px;color:#777">'+esc(date)+'</div></div></div>'
+      +'<div class="meta">'+(meta.name?'<div>Quote<b>'+esc(meta.name)+'</b></div>':'')+(meta.client?'<div>Client<b>'+esc(meta.client)+'</b></div>':'')+'<div>Prepared by<b>Trig Modern · Raleigh, NC</b></div></div>'
+      +'<table><thead><tr><th>#</th><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Unit</th><th class="r">Line</th></tr></thead>'
+      +'<tbody>'+body+'</tbody>'
+      +'<tfoot><tr><td colspan="6" class="r">Retail total</td><td class="r">'+money(retailTot)+'</td></tr>'
+      +(showTrade?('<tr><td colspan="6" class="r trade">Trade total</td><td class="r trade">'+money(tradeTot)+'</td></tr>'):'')
+      +'</tfoot></table>'
+      +'<div class="note">Pricing reflects verified Trig figures where available; items marked “Confirm” are configured by quote. Freight, COM, and lead times confirmed at order. Estimate only — not a final invoice.</div>'
+      +'<script>window.onload=function(){setTimeout(function(){window.print();},250);}<\/script></body></html>';
+    var w=window.open("","_blank"); if(w){ w.document.write(doc); w.document.close(); }
+  }
+  function emailQuote(){
+    var rs=quoteRows(); if(!rs.length) return;
+    var lines=rs.map(function(it){ var s=it.s, price=s.price||0; var cover=s.coverGrade?(' ['+s.coverGrade+']'):'';
+      return it.qty+'× '+(s.modelLabel||s.model||'Item')+cover+' — '+(price?money(price*it.qty):'confirm'); });
+    var tot=rs.reduce(function(a,it){return a+((it.s.price||0)*it.qty);},0);
+    var subj="Trig quote"+(meta.client?(" — "+meta.client):"");
+    var bodyTxt=(meta.client?("Client: "+meta.client+"\n"):"")+(meta.name?("Quote: "+meta.name+"\n"):"")+"\n"+lines.join("\n")+"\n\nRetail total: "+money(tot)+"\n\n(Generated in Trig Studio)";
+    var href="mailto:orders@trigmodern.com?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(bodyTxt);
+    try{ window.location.href=href; }catch(e){}
+  }
+
+  /* ---------- launch buttons ---------- */
+  function addButtons(){
+    // 1) "‹ Dashboard" + "Quote" in the room toolbar (#bar)
+    var bar=el("bar");
+    if(bar && !el("qbDash")){
+      var dash=document.createElement("button"); dash.id="qbDash"; dash.className="b"; dash.textContent="‹ Dashboard"; dash.onclick=goDashboard;
+      var q=document.createElement("button"); q.id="qbQuote"; q.className="b"; q.textContent="Quote"; q.onclick=startQuote;
+      bar.insertBefore(dash, bar.firstChild);
+      var tabs=bar.querySelector(".tabs"); if(tabs) tabs.parentNode.insertBefore(q, tabs.nextSibling); else bar.insertBefore(q, dash.nextSibling);
+    }
+    // 2) "Build a quote" in the designer portal header (#ptbar)
+    var ptbar=el("ptbar");
+    if(ptbar && !el("ptQuote")){
+      var pq=document.createElement("button"); pq.id="ptQuote"; pq.textContent="+ Build a quote"; pq.onclick=startQuote;
+      var so=el("ptSignOut"); if(so) ptbar.insertBefore(pq, so); else ptbar.appendChild(pq);
+    }
+  }
+
+  function init(){ injectCSS(); addButtons(); }
+  var t=0; (function tick(){ try{ init(); }catch(e){} if(++t<25) setTimeout(tick,400); })();
+})();
+</script>
 </body></html>
