@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Trig Studio — Vendor Scorecard</title>
+<style>
+  :root{ --bg:#f5f5f7; --panel:#fff; --ink:#1d1d1f; --muted:#86868b; --line:#e3e3e8; --accent:#e2562a; --navy:#2a3a4d; }
+  *{ box-sizing:border-box; } body{ margin:0; font:15px/1.45 -apple-system,"SF Pro Display",Helvetica,Arial,sans-serif; color:var(--ink);
+        background:radial-gradient(120% 90% at 90% -10%, #eef2f7 0%, var(--bg) 45%); min-height:100vh; }
+  .wrap{ max-width:980px; margin:0 auto; padding:26px 20px 80px; }
+  header.top{ display:flex; align-items:center; gap:12px; margin-bottom:4px; flex-wrap:wrap; }
+  header.top h1{ font-size:22px; margin:0; font-weight:700; letter-spacing:-.02em; } header.top h1 b{ color:var(--navy); }
+  select{ padding:8px 12px; border:1px solid var(--line); border-radius:10px; font-size:15px; background:#fff; }
+  .who{ margin-left:auto; font-size:12px; color:var(--muted); } .who a{ color:var(--accent); cursor:pointer; }
+  .sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+  .funnel{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+  .fstep{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; position:relative; }
+  .fstep .n{ font-size:28px; font-weight:700; letter-spacing:-.02em; } .fstep.lead .n{ color:var(--navy); }
+  .fstep .l{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .fstep .r{ font-size:11px; color:var(--accent); margin-top:3px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media(max-width:720px){ .grid2,.funnel{ grid-template-columns:1fr 1fr; } }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:16px; }
+  .card h3{ margin:0 0 2px; font-size:16px; } .card .hint{ color:var(--muted); font-size:12px; margin-bottom:14px; }
+  .row{ display:grid; grid-template-columns:36px 1fr auto; align-items:center; gap:11px; padding:7px 0; border-top:1px solid var(--line); }
+  .row:first-of-type{ border-top:0; } .th{ width:36px; height:36px; border-radius:7px; object-fit:cover; background:#f0eee9; }
+  .nm{ font-weight:600; font-size:14px; } .meta{ color:var(--muted); font-size:12px; }
+  .bar{ height:6px; border-radius:4px; background:var(--navy); margin-top:5px; }
+  .big{ font-weight:700; font-size:15px; text-align:right; }
+  .note{ background:#f4f7fb; border:1px solid #dce6f2; border-radius:12px; padding:12px 14px; font-size:12px; color:#4a5a6b; margin-bottom:18px; }
+  .empty{ color:var(--muted); font-size:13px; padding:10px 0; }
+  #gate{ max-width:380px; margin:14vh auto; background:#fff; border:1px solid var(--line); border-radius:16px; padding:28px; }
+  #gate input{ width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px; font-size:15px; }
+  #gate button{ background:var(--navy); color:#fff; border:0; border-radius:10px; padding:11px 16px; font-size:15px; font-weight:600; cursor:pointer; width:100%; margin-top:10px; }
+  .msg{ font-size:12px; color:var(--muted); margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="display:none">
+  <header class="top"><h1><b>Trig</b> Studio — Vendor scorecard</h1>
+    <select id="brandSel"></select><span class="who" id="who"></span></header>
+  <div class="sub" id="sub">How this brand is performing inside Trig's designer activity.</div>
+
+  <div class="note">Aggregated demand intent — counts and rates only. No dealer margins, no revenue, no competitors' figures. This is the safe, shareable cut a vendor would see (the Material Bank model).</div>
+
+  <div class="funnel" id="funnel"></div>
+
+  <div class="grid2">
+    <div class="card"><h3>Top pieces by demand</h3><div class="hint">Their SKUs, by placements in rooms</div><div id="skus"></div></div>
+    <div class="card"><h3>Configuration interest</h3><div class="hint">Which sizes / grades designers pick (made-to-order signal)</div><div id="configs"></div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Where they sit in the room</h3><div class="hint">Category mix of this brand's placements</div><div id="cats"></div></div>
+    <div class="card"><h3>Brand searches</h3><div class="hint">Designer searches mentioning this brand</div><div id="searches"></div></div>
+  </div>
+</div>
+
+<div id="gate">
+  <h2 style="margin:0 0 4px;font-size:20px"><b style="color:var(--navy)">Trig</b> Studio — Vendor scorecard</h2>
+  <p style="color:var(--muted);font-size:13px;margin:0 0 16px">Authorized account required.</p>
+  <input id="email" type="email" placeholder="you@email.com" autocomplete="email"/>
+  <button id="send">Email me a sign-in link</button><div class="msg" id="gmsg"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ⚠️ SECURITY (read before going vendor-facing): this view is ADMIN-ONLY today.
+   It pulls all-brand RPC results and filters by brand in the browser — that is a
+   UI convenience, NOT a security boundary. Before exposing to an actual vendor,
+   the brand filter MUST move server-side (a _brand arg on the RPCs that scopes
+   rows to that vendor's own SKUs), or a vendor could read every brand's data.
+   Until then keep it behind the admin allowlist. */
+(function(){
+  "use strict";
+  var SUPA_URL="https://xyfogedlowneaevmjkci.supabase.co", SUPA_KEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu";
+  var FEED="https://raw.githubusercontent.com/trig-modern/trig-catalog-data/main/catalog.json";
+  var sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  var CAT={}, BRAND="", D={};   // D = cached rpc results
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function prod(id){return CAT[String(id)]||{};}
+  function brandOf(p){return p.brand||p.vendor||"—";}
+  function img(p){var u=p.image||(p.gallery&&p.gallery[0])||"";return u?'<img class="th" src="'+esc(u)+'">':'<div class="th"></div>';}
+  function mine(id){ return (brandOf(prod(id))||"").toLowerCase()===BRAND.toLowerCase(); }
+
+  function bars(el,rows,valKey,labFn,subFn){ var box=$(el);
+    rows=(rows||[]).filter(function(r){return mine(r.app_id);});
+    if(!rows.length){box.innerHTML='<div class="empty">No activity yet.</div>';return;}
+    var max=Math.max.apply(null,rows.map(function(r){return Number(r[valKey])||0;}))||1;
+    box.innerHTML=rows.slice(0,8).map(function(r){var p=prod(r.app_id);var v=Number(r[valKey])||0;
+      return '<div class="row">'+img(p)+'<div><div class="nm">'+esc(p.model||p.name||r.app_id)+'</div>'+
+        '<div class="bar" style="width:'+Math.max(6,Math.round(v/max*100))+'%"></div>'+
+        '<div class="meta">'+(subFn?subFn(r):'')+'</div></div><div class="big">'+v+'</div></div>';
+    }).join(''); }
+
+  function render(){
+    $("sub").textContent="How "+BRAND+" is performing inside Trig's designer activity.";
+    var placed=(D.placed||[]).filter(function(r){return mine(r.app_id);});
+    var saved=(D.faves||[]).filter(function(r){return mine(r.app_id);});
+    var quoted=(D.quoted||[]).filter(function(r){return mine(r.app_id);});
+    var sumP=placed.reduce(function(s,x){return s+Number(x.placements||0);},0);
+    var sumS=saved.reduce(function(s,x){return s+Number(x.favorites||0);},0);
+    var sumQ=quoted.reduce(function(s,x){return s+Number(x.quotes||0);},0);
+    var allP=(D.placed||[]).reduce(function(s,x){return s+Number(x.placements||0);},0)||1;
+    var share=Math.round(sumP/allP*100);
+    $("funnel").innerHTML=
+      '<div class="fstep lead"><div class="n">'+sumP+'</div><div class="l">Placed in rooms</div><div class="r">'+share+'% of all placements</div></div>'+
+      '<div class="fstep"><div class="n">'+sumS+'</div><div class="l">Saved / favorited</div></div>'+
+      '<div class="fstep"><div class="n">'+sumQ+'</div><div class="l">In submitted quotes</div></div>'+
+      '<div class="fstep"><div class="n">'+(sumP?Math.round(sumQ/sumP*100):0)+'%</div><div class="l">Place → quote rate</div></div>';
+    bars("skus",D.placed,"placements",null,function(r){return r.designers+" designer"+(r.designers==1?"":"s")+" · "+r.rooms+" room"+(r.rooms==1?"":"s");});
+    // configs filtered to brand
+    var cfgs=(D.configs||[]).filter(function(r){return mine(r.app_id);});
+    if(!cfgs.length){ $("configs").innerHTML='<div class="empty">No configuration activity yet — fills in as designers configure pieces.</div>'; }
+    else { var cmax=Math.max.apply(null,cfgs.map(function(x){return Number(x.n);}))||1;
+      $("configs").innerHTML=cfgs.slice(0,8).map(function(r){var p=prod(r.app_id);
+        return '<div class="row" style="grid-template-columns:1fr auto"><div><div class="nm">'+esc(p.model||r.app_id)+' <span class="meta">· '+esc(r.config_key)+'</span></div>'+
+          '<div class="bar" style="width:'+Math.max(6,Math.round(r.n/cmax*100))+'%"></div><div class="meta">'+r.designers+' designer'+(r.designers==1?'':'s')+'</div></div><div class="big">'+r.n+'</div></div>';
+      }).join(''); }
+    // category mix within brand
+    var cm={}; placed.forEach(function(r){var c=prod(r.app_id).category||"—"; cm[c]=(cm[c]||0)+Number(r.placements||0);});
+    var ca=Object.keys(cm).map(function(k){return{k:k,v:cm[k]};}).sort(function(a,b){return b.v-a.v;});
+    if(!ca.length){ $("cats").innerHTML='<div class="empty">No activity yet.</div>'; }
+    else { var cmx=ca[0].v||1; var tot=ca.reduce(function(s,x){return s+x.v;},0)||1;
+      $("cats").innerHTML=ca.slice(0,8).map(function(x){return '<div class="row" style="grid-template-columns:1fr auto"><div><div class="nm">'+esc(x.k)+'</div><div class="bar" style="width:'+Math.max(6,Math.round(x.v/cmx*100))+'%"></div><div class="meta">'+Math.round(x.v/tot*100)+'% of this brand</div></div><div class="big">'+x.v+'</div></div>';}).join(''); }
+    // searches mentioning brand
+    var sr=(D.searches||[]).filter(function(r){return (r.q||"").indexOf(BRAND.toLowerCase())>=0;});
+    if(!sr.length){ $("searches").innerHTML='<div class="empty">No brand searches captured yet.</div>'; }
+    else { var smx=Math.max.apply(null,sr.map(function(x){return Number(x.searches);}))||1;
+      $("searches").innerHTML=sr.slice(0,8).map(function(x){return '<div class="row" style="grid-template-columns:1fr auto"><div><div class="nm">'+esc(x.q)+'</div><div class="bar" style="width:'+Math.max(6,Math.round(x.searches/smx*100))+'%"></div><div class="meta">'+x.designers+' designer'+(x.designers==1?'':'s')+'</div></div><div class="big">'+x.searches+'</div></div>';}).join(''); }
+  }
+
+  function loadData(){ Promise.all([
+      sb.rpc("admin_top_placed_current",{_limit:400}),
+      sb.rpc("admin_top_favorites",{_limit:400}),
+      sb.rpc("admin_top_quoted",{_since:null,_limit:400}),
+      sb.rpc("admin_top_configured",{_since:null,_limit:400}),
+      sb.rpc("admin_top_searches",{_since:null,_limit:200})
+    ]).then(function(r){ D.placed=r[0].data||[]; D.faves=r[1].data||[]; D.quoted=r[2].data||[]; D.configs=r[3].data||[]; D.searches=r[4].data||[];
+      buildBrandList(); render(); }); }
+
+  function buildBrandList(){
+    var counts={}; (D.placed||[]).forEach(function(r){var b=brandOf(prod(r.app_id)); if(b&&b!=="—")counts[b]=(counts[b]||0)+Number(r.placements||0);});
+    var brands=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    if(!brands.length){ brands=Array.from(new Set(Object.values(CAT).map(brandOf))).filter(function(b){return b&&b!=="—";}).sort(); }
+    var qp=new URLSearchParams(location.search).get("brand");
+    BRAND=qp||BRAND||brands[0]||"American Leather";
+    $("brandSel").innerHTML=brands.map(function(b){return '<option'+(b===BRAND?' selected':'')+'>'+esc(b)+'</option>';}).join('');
+  }
+  $("brandSel").onchange=function(){ BRAND=this.value; render(); };
+
+  function showApp(email){ $("gate").style.display="none"; $("app").style.display="block";
+    $("who").innerHTML=esc(email)+' · <a id="out">sign out</a>'; $("out").onclick=function(){sb.auth.signOut().then(function(){location.reload();});};
+    fetch(FEED,{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){
+      var arr=Array.isArray(j)?j:(j.products||Object.values(j).find(function(v){return Array.isArray(v);})||[]);
+      arr.forEach(function(p){if(p&&p.id!=null)CAT[String(p.id)]=p;});
+    }).catch(function(){}).finally(loadData); }
+  function denied(email){ $("gate").style.display="block"; $("app").style.display="none"; $("gmsg").innerHTML='<b style="color:#c0392b">'+esc(email)+'</b> is not authorized.'; }
+  function check(){ sb.auth.getSession().then(function(r){var s=r.data&&r.data.session; if(!s){$("gate").style.display="block";return;}
+    sb.rpc("is_admin").then(function(a){a.data===true?showApp(s.user.email):denied(s.user.email);});});}
+  $("send").onclick=function(){var em=$("email").value.trim(); if(!em)return; $("gmsg").textContent="Sending…";
+    sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.href.split('#')[0]}}).then(function(r){$("gmsg").textContent=r.error?("Error: "+r.error.message):"Check your email.";});};
+  sb.auth.onAuthStateChange(function(_e,s){if(s&&s.user){sb.rpc("is_admin").then(function(a){a.data===true?showApp(s.user.email):denied(s.user.email);});}});
+  check();
+})();
+</script>
+</body>
+</html>

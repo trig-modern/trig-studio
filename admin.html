@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Trig Studio — Owner Dashboard</title>
+<style>
+  :root{ --bg:#f5f5f7; --panel:#fff; --ink:#1d1d1f; --muted:#86868b; --line:#e3e3e8;
+         --accent:#e2562a; --navy:#2a3a4d; --good:#1a8a4a; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font:15px/1.45 -apple-system,"SF Pro Display",Helvetica,Arial,sans-serif; color:var(--ink);
+        background:radial-gradient(120% 90% at 90% -10%, #fdeee6 0%, var(--bg) 45%); min-height:100vh; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:26px 20px 80px; }
+  header.top{ display:flex; align-items:baseline; gap:12px; margin-bottom:4px; }
+  header.top h1{ font-size:23px; margin:0; font-weight:700; letter-spacing:-.02em; }
+  header.top h1 b{ color:var(--accent); }
+  .sub{ color:var(--muted); font-size:13px; margin-bottom:20px; }
+  .who{ margin-left:auto; font-size:12px; color:var(--muted); }
+  .who a{ color:var(--accent); cursor:pointer; }
+  #gate{ max-width:380px; margin:14vh auto; background:var(--panel); border:1px solid var(--line);
+         border-radius:16px; padding:28px; box-shadow:0 8px 30px rgba(0,0,0,.06); }
+  #gate h2{ margin:0 0 4px; font-size:20px; } #gate p{ color:var(--muted); margin:0 0 16px; font-size:13px; }
+  input[type=email]{ width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px; font-size:15px; }
+  button.b{ background:var(--accent); color:#fff; border:0; border-radius:10px; padding:11px 16px; font-size:15px;
+            font-weight:600; cursor:pointer; width:100%; margin-top:10px; } button.b:active{ transform:translateY(1px); }
+  .msg{ font-size:12px; color:var(--muted); margin-top:10px; min-height:16px; }
+  .hero{ display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:12px; margin-bottom:14px; }
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; margin-bottom:22px; }
+  .stat{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .stat.big{ background:linear-gradient(135deg,#fff, #fff6f2); border-color:#f3cdbd; }
+  .stat .n{ font-size:26px; font-weight:700; letter-spacing:-.02em; }
+  .stat.big .n{ font-size:34px; color:var(--accent); }
+  .stat .l{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .stat .d{ font-size:11px; color:var(--muted); margin-top:3px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:720px){ .grid2,.hero{ grid-template-columns:1fr; } }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:16px; }
+  .card h3{ margin:0 0 2px; font-size:16px; } .card .hint{ color:var(--muted); font-size:12px; margin-bottom:14px; }
+  .row{ display:grid; grid-template-columns:26px 40px 1fr auto; align-items:center; gap:11px; padding:7px 0; border-top:1px solid var(--line); }
+  .row:first-of-type{ border-top:0; }
+  .rk{ color:var(--muted); font-size:13px; text-align:center; }
+  .th{ width:40px; height:40px; border-radius:8px; object-fit:cover; background:#f0eee9; }
+  .nm{ font-weight:600; font-size:14px; } .meta{ color:var(--muted); font-size:12px; }
+  .bar{ height:6px; border-radius:4px; background:var(--accent); margin-top:5px; }
+  .bar.navy{ background:var(--navy); }
+  .big{ font-weight:700; font-size:15px; text-align:right; } .biglbl{ color:var(--muted); font-size:11px; text-align:right; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; } th,td{ text-align:left; padding:8px 6px; border-top:1px solid var(--line); }
+  th{ color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  td.num,th.num{ text-align:right; } tr td:first-child{ font-weight:600; }
+  .seg{ display:inline-flex; gap:2px; background:#ececf0; border-radius:9px; padding:2px; margin-left:auto; }
+  .seg button{ border:0; background:transparent; padding:4px 10px; border-radius:7px; font-size:12px; cursor:pointer; color:var(--muted); }
+  .seg button.on{ background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .empty{ color:var(--muted); font-size:13px; padding:10px 0; }
+  .flex{ display:flex; align-items:center; gap:10px; }
+  .tag{ display:inline-block; font-size:11px; padding:1px 7px; border-radius:999px; background:#fbe7df; color:#b3431f; margin-left:6px; }
+  .spark{ display:flex; align-items:flex-end; gap:3px; height:60px; margin-top:6px; }
+  .spark i{ flex:1; background:var(--accent); border-radius:2px 2px 0 0; min-height:2px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app" style="display:none">
+  <header class="top"><h1><b>Trig</b> Studio — Owner</h1><span class="who" id="who"></span></header>
+  <div class="sub">Design-intent demand signal — what your designers are speccing, saving, and dropping, before an order ever lands.</div>
+
+  <div class="hero">
+    <div class="stat big"><div class="n" id="pipe">–</div><div class="l">Demand pipeline · retail value in active rooms</div><div class="d" id="pipeD"></div></div>
+    <div class="stat"><div class="n" id="savedVal">–</div><div class="l">Saved value</div><div class="d">favorited, not yet placed</div></div>
+    <div class="stat"><div class="n" id="active">–</div><div class="l">Active designers · 7d</div><div class="d" id="activeD"></div></div>
+  </div>
+  <div class="stats" id="stats"></div>
+
+  <div class="card">
+    <div class="flex"><div><h3>Most-spec'd pieces</h3><div class="hint" id="placedHint">In designers' rooms right now</div></div>
+      <div class="seg" id="placedSeg"><button data-mode="current" class="on">In rooms now</button><button data-mode="events">Added (trend)</button></div></div>
+    <div id="placed"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Brand demand</h3><div class="hint">Share of pieces spec'd, by brand — your vendor-conversation ammo</div><div id="brands"></div></div>
+    <div class="card"><h3>Category mix</h3><div class="hint">What rooms are made of</div><div id="cats"></div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Most-saved</h3><div class="hint">Favorites across all designers — intent before an order</div><div id="faves"></div></div>
+    <div class="card"><h3>Wanted, not yet placed</h3><div class="hint">Saved but in no room — the be-back hook / nudge list</div><div id="gap"></div></div>
+  </div>
+
+  <div class="card">
+    <h3>Unmet demand — searches</h3><div class="hint">What designers look for. <span class="tag">not carried</span> = no catalog match → a vendor-line candidate</div>
+    <div id="searches"></div>
+  </div>
+
+  <div class="card">
+    <div class="flex"><div><h3>Designer activity</h3><div class="hint">Who's active, what they're doing</div></div>
+      <div class="seg" id="sinceSeg"><button data-d="7">7d</button><button data-d="30" class="on">30d</button><button data-d="90">90d</button><button data-d="0">All</button></div></div>
+    <div id="designers"></div>
+  </div>
+
+  <div class="card"><h3>Activity trend</h3><div class="hint">Events per day (range follows the toggle)</div><div id="trend"></div></div>
+</div>
+
+<div id="gate">
+  <h2><b style="color:var(--accent)">Trig</b> Studio — Owner</h2>
+  <p>Sign in with an authorized owner email.</p>
+  <input id="email" type="email" placeholder="you@trigmodern.com" autocomplete="email"/>
+  <button class="b" id="send">Email me a sign-in link</button>
+  <div class="msg" id="gmsg"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+  var SUPA_URL="https://xyfogedlowneaevmjkci.supabase.co";
+  var SUPA_KEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu";
+  var FEED="https://raw.githubusercontent.com/trig-modern/trig-catalog-data/main/catalog.json";
+  var sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  var CAT={}, NAMESET="", _since=30, _placedMode="current";
+  var $=function(id){return document.getElementById(id);};
+  function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function money(n){ if(!n) return "$0"; if(n>=1000000) return "$"+(n/1000000).toFixed(1)+"M"; if(n>=1000) return "$"+Math.round(n/1000)+"k"; return "$"+Math.round(n); }
+  function prod(id){ return CAT[String(id)]||{}; }
+  function brandOf(p){ return p.brand||p.vendor||"—"; }
+  function nameOf(p,id){ return esc(p.model||p.name||("#"+id)); }
+  function priceOf(p){ return Number(p.msrp||p.price_from||0)||0; }
+  function img(p){ var u=p.image||(p.gallery&&p.gallery[0])||""; return u?'<img class="th" src="'+esc(u)+'" loading="lazy">':'<div class="th"></div>'; }
+  function sinceTs(){ if(!_since) return null; return new Date(Date.now()-_since*864e5).toISOString(); }
+
+  function barRows(el, rows, valKey, valLbl, sub, navy){
+    var box=$(el); if(!rows||!rows.length){ box.innerHTML='<div class="empty">No data yet — fills in as designers use the app.</div>'; return; }
+    var max=Math.max.apply(null, rows.map(function(r){return Number(r[valKey])||0;}))||1;
+    box.innerHTML=rows.slice(0,10).map(function(r,i){ var p=prod(r.app_id); var v=Number(r[valKey])||0;
+      return '<div class="row"><div class="rk">'+(i+1)+'</div>'+img(p)+
+        '<div><div class="nm">'+nameOf(p,r.app_id)+'<span class="meta"> · '+esc(brandOf(p))+'</span></div>'+
+        '<div class="bar'+(navy?' navy':'')+'" style="width:'+Math.max(6,Math.round(v/max*100))+'%"></div>'+
+        '<div class="meta">'+sub(r,p)+'</div></div>'+
+        '<div><div class="big">'+v+'</div><div class="biglbl">'+valLbl+'</div></div></div>';
+    }).join('');
+  }
+
+  function loadOverview(){ sb.rpc("admin_overview").then(function(r){ var o=r.data||{};
+    $("active").textContent=(o.active_7d!=null?o.active_7d:"–");
+    $("activeD").textContent=(o.events_7d!=null?o.events_7d+" events · 7d":"");
+    var cells=[['designers','Designers'],['rooms','Rooms'],['favorites','Saved items'],['events_total','Events · all']];
+    $("stats").innerHTML=cells.map(function(c){return '<div class="stat"><div class="n">'+((o[c[0]]!=null)?o[c[0]]:'–')+'</div><div class="l">'+c[1]+'</div></div>';}).join('');
+  }); }
+
+  function rollup(rows, valKey, keyFn){ var m={}; rows.forEach(function(r){ var p=prod(r.app_id); var k=keyFn(p)||"—";
+    m[k]=(m[k]||0)+(Number(r[valKey])||0); }); return Object.keys(m).map(function(k){return {k:k,v:m[k]};}).sort(function(a,b){return b.v-a.v;}); }
+  function rollBars(el, agg, lbl, navy){ var box=$(el); if(!agg.length){box.innerHTML='<div class="empty">No data yet.</div>';return;}
+    var tot=agg.reduce(function(s,x){return s+x.v;},0)||1; var max=agg[0].v||1;
+    box.innerHTML=agg.slice(0,8).map(function(x){ var pct=Math.round(x.v/tot*100);
+      return '<div class="row" style="grid-template-columns:1fr auto"><div><div class="nm">'+esc(x.k)+'</div>'+
+        '<div class="bar'+(navy?' navy':'')+'" style="width:'+Math.max(6,Math.round(x.v/max*100))+'%"></div>'+
+        '<div class="meta">'+pct+'% of '+lbl+'</div></div><div class="big">'+x.v+'</div></div>';
+    }).join(''); }
+
+  function loadPlaced(){
+    if(_placedMode==="current"){ $("placedHint").textContent="In designers' rooms right now";
+      sb.rpc("admin_top_placed_current",{_limit:80}).then(function(r){ var rows=r.data||[];
+        barRows("placed",rows,"placements","placed",function(x){return x.designers+" designer"+(x.designers==1?"":"s")+" · "+x.rooms+" room"+(x.rooms==1?"":"s");});
+        rollBars("brands", rollup(rows,"placements",brandOf), "placements");
+        rollBars("cats", rollup(rows,"placements",function(p){return p.category;}), "placements", true);
+        var pipe=rows.reduce(function(s,x){return s+(Number(x.placements)||0)*priceOf(prod(x.app_id));},0);
+        $("pipe").textContent=money(pipe); var units=rows.reduce(function(s,x){return s+(Number(x.placements)||0);},0);
+        $("pipeD").textContent=units+" pieces across active rooms";
+      });
+    } else { $("placedHint").textContent="Added to rooms over the selected range";
+      sb.rpc("admin_top_placed_events",{_since:sinceTs(),_limit:40}).then(function(r){
+        barRows("placed",r.data,"adds","adds",function(x){return x.designers+" designer"+(x.designers==1?"":"s");});
+      });
+    }
+  }
+  function loadFaves(){ sb.rpc("admin_top_favorites",{_limit:60}).then(function(r){ var rows=r.data||[];
+    barRows("faves",rows,"favorites","saved",function(x){return x.designers+" designer"+(x.designers==1?"":"s");});
+    var sv=rows.reduce(function(s,x){return s+(Number(x.favorites)||0)*priceOf(prod(x.app_id));},0); $("savedVal").textContent=money(sv);
+  }); }
+  function loadGap(){ sb.rpc("admin_saved_not_placed",{_limit:20}).then(function(r){
+    barRows("gap",r.data,"saves","saved",function(x){return x.designers+" designer"+(x.designers==1?"":"s")+" · not in any room";});
+  }); }
+  function loadSearches(){ sb.rpc("admin_top_searches",{_since:sinceTs(),_limit:25}).then(function(r){ var rows=r.data||[];
+    if(!rows.length){ $("searches").innerHTML='<div class="empty">No searches captured yet.</div>'; return; }
+    var max=Math.max.apply(null,rows.map(function(x){return Number(x.searches)||0;}))||1;
+    $("searches").innerHTML=rows.map(function(x){ var carried=NAMESET.indexOf(" "+x.q+" ")>=0 || (x.q&&NAMESET.indexOf(x.q)>=0);
+      return '<div class="row" style="grid-template-columns:1fr auto"><div><div class="nm">'+esc(x.q)+(carried?'':'<span class="tag">not carried</span>')+'</div>'+
+        '<div class="bar" style="width:'+Math.max(6,Math.round(x.searches/max*100))+'%"></div>'+
+        '<div class="meta">'+x.designers+' designer'+(x.designers==1?'':'s')+'</div></div><div class="big">'+x.searches+'</div></div>';
+    }).join(''); }); }
+  function loadDesigners(){ sb.rpc("admin_designer_activity",{_since:sinceTs()}).then(function(r){ var rows=r.data||[];
+    if(!rows.length){ $("designers").innerHTML='<div class="empty">No designers yet.</div>'; return; }
+    $("designers").innerHTML='<table><tr><th>Designer</th><th class="num">Pieces added</th><th class="num">Saved</th><th class="num">Rooms</th><th class="num">Events</th><th>Last active</th></tr>'+
+      rows.map(function(d){ var when=d.last_active?new Date(d.last_active).toLocaleDateString():'—';
+        return '<tr><td>'+esc(d.name||d.email||'—')+'</td><td class="num">'+(d.pieces_added||0)+'</td><td class="num">'+(d.favorites||0)+'</td><td class="num">'+(d.rooms||0)+'</td><td class="num">'+(d.events||0)+'</td><td>'+when+'</td></tr>';
+      }).join('')+'</table>'; }); }
+  function loadTrend(){ sb.rpc("admin_events_daily",{_since:sinceTs()}).then(function(r){ var rows=r.data||[];
+    if(!rows.length){ $("trend").innerHTML='<div class="empty">No events captured yet.</div>'; return; }
+    var byday={}; rows.forEach(function(x){ byday[x.day]=(byday[x.day]||0)+Number(x.n); });
+    var days=Object.keys(byday).sort(); var max=Math.max.apply(null,days.map(function(d){return byday[d];}))||1;
+    $("trend").innerHTML='<div class="spark">'+days.map(function(d){return '<i title="'+d+': '+byday[d]+'" style="height:'+Math.max(2,Math.round(byday[d]/max*60))+'px"></i>';}).join('')+'</div>'+
+      '<div class="meta" style="margin-top:6px">'+days.length+' days · peak '+max+' events/day</div>'; }); }
+
+  function loadAll(){ loadOverview(); loadPlaced(); loadFaves(); loadGap(); loadSearches(); loadDesigners(); loadTrend(); }
+
+  $("placedSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+    $("placedSeg").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); _placedMode=b.dataset.mode; loadPlaced();});
+  $("sinceSeg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+    $("sinceSeg").querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);}); _since=Number(b.dataset.d);
+    loadDesigners(); loadTrend(); loadSearches(); if(_placedMode==="events")loadPlaced();});
+
+  function showApp(email){ $("gate").style.display="none"; $("app").style.display="block";
+    $("who").innerHTML=esc(email)+' · <a id="out">sign out</a>';
+    $("out").onclick=function(){ sb.auth.signOut().then(function(){location.reload();}); };
+    fetch(FEED,{cache:"no-store"}).then(function(r){return r.json();}).then(function(j){
+      var arr=Array.isArray(j)?j:(j.products||Object.values(j).find(function(v){return Array.isArray(v);})||[]);
+      var names=[" "]; arr.forEach(function(p){ if(p&&p.id!=null){ CAT[String(p.id)]=p;
+        names.push(((p.model||p.name||"")+" "+(p.brand||"")+" "+(p.category||"")).toLowerCase()); } });
+      NAMESET=" "+names.join(" ")+" ";
+    }).catch(function(){}).finally(loadAll);
+  }
+  function denied(email){ $("gate").style.display="block"; $("app").style.display="none";
+    $("gmsg").innerHTML='<b style="color:#c0392b">'+esc(email)+'</b> is not an authorized owner account.'; $("send").textContent="Use a different email"; }
+
+  function check(){ sb.auth.getSession().then(function(r){ var s=r.data&&r.data.session; if(!s){ $("gate").style.display="block"; return; }
+    sb.rpc("is_admin").then(function(a){ a.data===true?showApp(s.user.email):denied(s.user.email); }); }); }
+  $("send").onclick=function(){ var em=$("email").value.trim(); if(!em){$("gmsg").textContent="Enter your email.";return;} $("gmsg").textContent="Sending…";
+    sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.href.split('#')[0]}}).then(function(r){ $("gmsg").textContent=r.error?("Error: "+r.error.message):"Check your email for the sign-in link."; }); };
+  sb.auth.onAuthStateChange(function(_e,s){ if(s&&s.user){ sb.rpc("is_admin").then(function(a){ a.data===true?showApp(s.user.email):denied(s.user.email); }); } });
+  check();
+})();
+</script>
+</body>
+</html>
