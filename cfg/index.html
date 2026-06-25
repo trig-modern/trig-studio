@@ -378,12 +378,15 @@ function render(){
  // swatches
  let list=SWATCHES.filter(s=>s.type===state.mat);
  if(state.q) list=list.filter(s=>(s.cover+" "+s.color).toLowerCase().includes(state.q));
- if(state.grade){ const _inG=list.filter(s=>s.grade===state.grade); if(_inG.length) list=_inG; }
+ if(state.grade){ list=list.filter(function(s){return s.grade===state.grade;}); }
  (function(){var seen={},out=[];list.forEach(function(s){var k=(s.cover+"|"+s.color+"|"+s.hex).toLowerCase();if(!seen[k]){seen[k]=1;out.push(s);}});list=out;})();
- document.getElementById("sw").innerHTML=list.slice(0,700).map(s=>
-   '<div class="sw'+(state.sw&&state.sw.id===s.id?" on":"")+'" data-id="'+s.id+'" title="'+(s.cover+" "+s.color).replace(/"/g,"")+'"><div class="c" style="'+swbg(s,60)+'"></div><div class="n">'+(s.color||s.cover)+'</div></div>').join("")
-   || '<div class="note">No swatches match.</div>';
- document.querySelectorAll("#sw .sw").forEach(el=>el.onclick=()=>{ state.sw=SWATCHES.find(x=>x.id===el.dataset.id); render(); });
+ var _swItems=list.slice(0,700).map(s=>
+   '<div class="sw'+(state.sw&&state.sw.id===s.id?" on":"")+'" data-id="'+s.id+'" title="'+(s.cover+" "+s.color).replace(/"/g,"")+'"><div class="c" style="'+swbg(s,60)+'"></div><div class="n">'+(s.color||s.cover)+'</div></div>').join("");
+ if(state.grade && !_swItems){ var _mlbl=state.mat.charAt(0).toUpperCase()+state.mat.slice(1);
+   _swItems='<div class="note" style="grid-column:1/-1;margin-bottom:6px">No swatch samples loaded for '+_mlbl+' Grade '+state.grade+' yet — pricing is verified; exact cover confirmed with Trig.</div>'
+     +'<div class="sw'+(state.sw&&state.sw.generic?" on":"")+'" data-id="__gen" title="Grade '+state.grade+' cover"><div class="c" style="background:#cfc8bb"></div><div class="n">Grade '+state.grade+'</div></div>'; }
+ document.getElementById("sw").innerHTML=_swItems || '<div class="note">No swatches match.</div>';
+ document.querySelectorAll("#sw .sw").forEach(el=>el.onclick=()=>{ var id=el.dataset.id; if(id==="__gen"){ var _ml=state.mat.charAt(0).toUpperCase()+state.mat.slice(1); state.sw={id:"__gen_"+state.mat+"_"+state.grade,cover:_ml+" — Grade "+state.grade,color:"",hex:"#cfc8bb",type:state.mat,grade:state.grade,generic:true}; } else { state.sw=SWATCHES.find(x=>x.id===id); } render(); });
  // price
  const sku=resolve(); const sw=state.sw;
  document.getElementById("cfgcap").textContent=sku?("Selected: "+sku.desc+(sku.com?" · "+sku.com+" yds COM":"")):"";

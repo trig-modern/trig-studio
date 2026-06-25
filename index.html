@@ -3133,7 +3133,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 
   /* ---------- persistence ---------- */
   var meta={name:"",client:""};
-  function saveQuote(){ try{ localStorage.setItem(KEY, JSON.stringify({pieces:(window.state&&state.pieces)||[], name:meta.name, client:meta.client})); }catch(e){} }
+  function isQuoteRoom(){ return !!(window.state && state.room && state.room.quoteOnly); }
+  function saveQuote(){ if(!isQuoteRoom())return; try{ localStorage.setItem(KEY, JSON.stringify({pieces:(window.state&&state.pieces)||[], name:meta.name, client:meta.client})); }catch(e){} }
   function loadQuote(){ var d={pieces:[],name:"",client:""}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; return d; }
 
   /* ---------- styles ---------- */
@@ -3219,11 +3220,12 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 
     var tableOrEmpty = rs.length
       ? '<table class="qp-tbl"><thead><tr><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Unit</th><th class="r">Line'+(showTrade?' / Trade':'')+'</th><th></th></tr></thead><tbody>'+body+'</tbody></table>'
-      : '<div class="qp-empty"><b>No items in this quote yet</b><div class="qp-sub" style="margin-top:6px">Add Trig pieces — grades &amp; verified pricing carry straight in.</div><button class="qp-btn pri" id="qpAdd0" style="margin-top:16px">+ Add items</button></div>';
+      : '<div class="qp-empty"><b>Nothing here yet</b><div class="qp-sub" style="margin-top:6px">Add Trig pieces — grades &amp; verified pricing carry straight in.</div><button class="qp-btn pri" id="qpAdd0" style="margin-top:16px">+ Add items</button></div>';
 
+    var isQ=isQuoteRoom();
     p.innerHTML='<div class="qp-wrap">'
-      +'<div class="qp-head"><h2>Quote</h2><span class="qp-sub">'+n+' item'+(n===1?'':'s')+'</span></div>'
-      +'<div class="qp-fields"><input id="qpName" placeholder="Quote name (optional)" value="'+esc(meta.name)+'"><input id="qpClient" placeholder="Client name (optional)" value="'+esc(meta.client)+'"></div>'
+      +'<div class="qp-head"><h2>'+(isQ?'Quote':'Room cart')+'</h2><span class="qp-sub">'+n+' item'+(n===1?'':'s')+'</span></div>'
+      +(isQ?'<div class="qp-fields"><input id="qpName" placeholder="Quote name (optional)" value="'+esc(meta.name)+'"><input id="qpClient" placeholder="Client name (optional)" value="'+esc(meta.client)+'"></div>':'')
       +tableOrEmpty
       +'<div class="qp-foot"><div class="qp-tot">Retail total <b>'+money(retailTot)+'</b>'+(showTrade?(' &nbsp;·&nbsp; <span class="qp-trade">Trade '+money(tradeTot)+'</span>'):'')+'</div>'
       +'<div class="qp-actions"><button class="qp-btn" id="qpAdd">+ Add items</button>'
@@ -3264,7 +3266,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function redraw(){ try{ if(window.render) window.render(); }catch(e){} renderPanel(); saveQuote(); }
 
   /* ---------- launch / leave ---------- */
-  function startQuote(){
+  // Dashboard launcher: a fresh ROOM-LESS quote (saved separately in localStorage).
+  function startBlankQuote(){
     if(!window.state){ return; }
     var d=loadQuote();
     state.editVig=null; state.activeId=null; state.sel=null;
@@ -3273,19 +3276,31 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     try{ if(window.enter) enter("design"); }catch(e){}
     try{ if(window.setTab) setTab("design"); }catch(e){}
     var b=el("bar"); if(b) b.style.display="flex";
+    ensurePanel();
     document.body.classList.add("quote-mode");
     addButtons();
-    ensurePanel();
     try{ if(window.render) window.render(); }catch(e){}
     renderPanel();
     try{ if(window.trigLog) trigLog("quote_open",{meta:{items:state.pieces.length}}); }catch(e){}
+  }
+  // In-room toolbar button: toggle a line-item CART of the CURRENT room (no state replacement).
+  function toggleQuoteView(){
+    if(!window.state){ return; }
+    if(!state.room){ startBlankQuote(); return; }      // no room -> behave like a blank quote
+    if(inQuote()){ document.body.classList.remove("quote-mode"); try{ if(window.render) window.render(); }catch(e){} return; }
+    if(!isQuoteRoom()){ meta.name=""; meta.client=""; } // room cart: don't inherit a prior quote's name
+    ensurePanel();
+    document.body.classList.add("quote-mode");
+    renderPanel();
+    try{ if(window.trigLog) trigLog("cart_view",{meta:{items:(state.pieces||[]).length}}); }catch(e){}
   }
   function goDashboard(){
     if(inQuote()){ saveQuote(); document.body.classList.remove("quote-mode"); }
     try{ if(window.openPortal){ openPortal(); return; } }catch(e){}
     try{ if(window.showHome) showHome(); }catch(e){}
   }
-  window.trigStartQuote=startQuote;
+  window.trigStartQuote=startBlankQuote;
+  window.trigToggleQuote=toggleQuoteView;
   window.trigGoDashboard=goDashboard;
 
   /* ---------- export ---------- */
@@ -3335,14 +3350,14 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     var bar=el("bar");
     if(bar && !el("qbDash")){
       var dash=document.createElement("button"); dash.id="qbDash"; dash.className="b"; dash.textContent="‹ Dashboard"; dash.onclick=goDashboard;
-      var q=document.createElement("button"); q.id="qbQuote"; q.className="b"; q.textContent="Quote"; q.onclick=startQuote;
+      var q=document.createElement("button"); q.id="qbQuote"; q.className="b"; q.textContent="Cart / Quote"; q.onclick=toggleQuoteView;
       bar.insertBefore(dash, bar.firstChild);
       var tabs=bar.querySelector(".tabs"); if(tabs) tabs.parentNode.insertBefore(q, tabs.nextSibling); else bar.insertBefore(q, dash.nextSibling);
     }
     // 2) "Build a quote" in the designer portal header (#ptbar)
     var ptbar=el("ptbar");
     if(ptbar && !el("ptQuote")){
-      var pq=document.createElement("button"); pq.id="ptQuote"; pq.textContent="+ Build a quote"; pq.onclick=startQuote;
+      var pq=document.createElement("button"); pq.id="ptQuote"; pq.textContent="+ Build a quote"; pq.onclick=startBlankQuote;
       var so=el("ptSignOut"); if(so) ptbar.insertBefore(pq, so); else ptbar.appendChild(pq);
     }
   }
