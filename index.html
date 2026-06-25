@@ -3174,7 +3174,9 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       ".qp-btn.pri{background:#1d1d1f;color:#fff;border-color:transparent;}",
       ".qp-btn.tint{background:var(--tint,#e0512f);color:#fff;border-color:transparent;}",
       ".qp-empty{text-align:center;color:#86868b;padding:60px 20px;background:#fff;border:1px dashed #dcd8d2;border-radius:14px;}",
-      "#qbDash{margin-right:6px;}"
+      "#qbDash{margin-right:6px;}",
+      "#ptQuote{margin-left:auto;padding:9px 16px;border-radius:10px;border:0;background:var(--tint,#e0512f);color:#fff;font:600 14px/1 inherit;cursor:pointer;}",
+      "#ptQuote:hover{filter:brightness(.94);}"
     ].join("\n");
     document.head.appendChild(s);
   }
@@ -3273,6 +3275,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     state.editVig=null; state.activeId=null; state.sel=null;
     state.room={type:"Quote",size:"quote",w:60,d:60,shape:null,floor:"oak",quoteOnly:true};
     state.pieces=Array.isArray(d.pieces)?d.pieces:[];
+    // close any overlay we might be launching from (portal / map / home) so design isn't hidden behind it
+    ["portal","maphome","home","catalogue","catdetail","vigpage"].forEach(function(id){ var x=el(id); if(x) x.classList.add("gone"); });
     try{ if(window.enter) enter("design"); }catch(e){}
     try{ if(window.setTab) setTab("design"); }catch(e){}
     var b=el("bar"); if(b) b.style.display="flex";
