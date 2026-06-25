@@ -2976,11 +2976,14 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   }, true);
 })();</script>
 
+
 <script>/* TRIG-GRADE-V1 — data-driven cover-grade selector + verified pricing (Architect 2026-06-25)
- * Additive: wraps renderInspector, appends a grade chip row ONLY for pieces that have
- * verified configs in trade_prices_cfg (via get_config_options). Picking a grade shows the
- * exact verified Retail + Trade from get_price. No verified row -> "Trade — confirm with Trig".
- * Net only renders for trade-approved accounts (server gate). Non-AL pieces: untouched. */
+ * Additive: wraps renderInspector, appends a grade chip row ONLY for pieces that have verified
+ * configs in trade_prices_cfg (get_config_options). Picking a grade writes the verified
+ * retail->spec.price and net->spec.trade_price so the ROOM TOTAL + QUOTE use it, then re-renders.
+ * No verified row -> "Trade — confirm with Trig" (price not overwritten). Net only renders for
+ * trade-approved accounts (server gate). Non-AL pieces: untouched. No render loop (apply is
+ * click-only; the inject-time path is display-only). */
 (function(){
   "use strict";
   var URL="https://xyfogedlowneaevmjkci.supabase.co", KEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu", SB=null;
@@ -2989,13 +2992,13 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function cfgKey(sel){ var p=[]; Object.keys(sel||{}).forEach(function(a){ var v=sel[a]; if(v==null||v==="")return; p.push(norm(a)+":"+norm(v)); }); return p.sort().join("|"); }
   function money(n){ return (n==null)?null:"$"+Math.round(n).toLocaleString(); }
   function titleCase(g){ return g.replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+  function shapeOf(s){ var sh=s.config||""; return /^(sofa|loveseat|l_l|l_r|u)$/.test(sh)?sh:""; }
 
   function ctx(){
     try{
       var pc=window.curPiece&&curPiece(); if(!pc)return null;
       var s=pc.spec, al=pc.kind==="al";
-      var prod = al ? (window.CATALOG||[]).find(function(p){return p.cfg===s.model;})
-                    : (window.byId?byId(s.id):null);
+      var prod = al ? (window.CATALOG||[]).find(function(p){return p.cfg===s.model;}) : (window.byId?byId(s.id):null);
       if(!prod || prod.id==null) return null;
       return { pc:pc, s:s, app_id:String(prod.id) };
     }catch(e){ return null; }
@@ -3006,23 +3009,37 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     var c=sb(); if(!c) return cb(null);
     c.rpc("get_config_options",{_app_id:app_id}).then(function(r){ optCache[app_id]=(r&&r.data)||[]; cb(optCache[app_id]); }, function(){ cb(null); });
   }
-  function shapeOf(s){ var sh=s.config||""; return /^(sofa|loveseat|l_l|l_r|u)$/.test(sh)?sh:""; }
+  function setReadout(html){ var el=document.getElementById("trigGradePrice"); if(el) el.innerHTML=html; }
+  function priceHTML(net,retail,sh){
+    if(net==null && retail==null) return '<b>Trade — confirm with Trig</b>'+(sh?' <span style="color:#86868b">('+sh.replace("_"," ")+' — configured by quote)</span>':'');
+    var parts=[]; if(retail!=null) parts.push('Retail '+money(retail));
+    parts.push(net!=null ? '<b style="color:#e2562a">Trade '+money(net)+'</b>' : '<span style="color:#86868b">Trade — confirm with Trig</span>');
+    return parts.join(' &nbsp;·&nbsp; ');
+  }
+  function keyFor(c){ var sel={grade:c.s.grade}; var sh=shapeOf(c.s); if(sh)sel.shape=sh; return {key:cfgKey(sel),sh:sh}; }
 
-  function showPrice(c){
-    var el=document.getElementById("trigGradePrice"); if(!el) return;
-    if(!c.s.grade){ el.innerHTML='<span style="color:#86868b">Pick a grade for verified pricing</span>'; return; }
-    var sel={grade:c.s.grade}; var sh=shapeOf(c.s); if(sh) sel.shape=sh;
-    var key=cfgKey(sel); el.innerHTML='<span style="color:#86868b">…</span>';
+  // inject-time: display only — never writes spec or re-renders (prevents loops)
+  function showDisplay(c){
+    if(!c.s.grade){ setReadout('<span style="color:#86868b">Pick a grade for verified pricing</span>'); return; }
+    var k=keyFor(c); setReadout('<span style="color:#86868b">…</span>');
     var cl=sb(); if(!cl) return;
-    cl.rpc("get_price",{_app_id:c.app_id,_config_key:key}).then(function(r){
+    cl.rpc("get_price",{_app_id:c.app_id,_config_key:k.key}).then(function(r){ var row=(r&&r.data&&r.data[0])||{}; setReadout(priceHTML(row.net,row.retail,k.sh)); },
+      function(){ setReadout('<span style="color:#86868b">Trade — confirm with Trig</span>'); });
+  }
+  // click-time: fetch, WRITE verified price onto the piece (drives total + quote), re-render
+  function applyGrade(c){
+    var k=keyFor(c); c.s._cfgKey=k.key; setReadout('<span style="color:#86868b">…</span>');
+    var cl=sb(); if(!cl) return;
+    cl.rpc("get_price",{_app_id:c.app_id,_config_key:k.key}).then(function(r){
       var row=(r&&r.data&&r.data[0])||{}; var net=row.net, retail=row.retail;
-      var e2=document.getElementById("trigGradePrice"); if(!e2) return;
-      if(net==null && retail==null){ e2.innerHTML='<b>Trade — confirm with Trig</b>'+(sh?' <span style="color:#86868b">('+sh.replace("_"," ")+' — configured price by quote)</span>':''); return; }
-      var parts=[];
-      if(retail!=null) parts.push('Retail '+money(retail));
-      parts.push(net!=null ? '<b style="color:#e2562a">Trade '+money(net)+'</b>' : '<span style="color:#86868b">Trade — confirm with Trig</span>');
-      e2.innerHTML=parts.join(' &nbsp;·&nbsp; ');
-    }, function(){ var e2=document.getElementById("trigGradePrice"); if(e2)e2.innerHTML='<span style="color:#86868b">Trade — confirm with Trig</span>'; });
+      if(retail!=null) c.s.price=retail;          // -> room total, quote spec rows, retail view
+      if(net!=null) c.s.trade_price=net;          // -> trade view
+      c.s.coverGrade=titleCase(c.s.grade);        // human label for the quote/spec
+      try{ if(window.trigLog) window.trigLog("grade_select",{app_id:c.app_id,config:{grade:c.s.grade},meta:{net:net,retail:retail}});}catch(e){}
+      try{ if(window.saveRooms) saveRooms(); }catch(e){}
+      try{ if(window.state&&state.room&&window.render) render(); }catch(e){}           // recompute room total
+      try{ if(window.renderInspector) renderInspector(); }catch(e){}                    // refresh price line + re-inject (display-only)
+    }, function(){ setReadout('<span style="color:#86868b">Trade — confirm with Trig</span>'); });
   }
 
   function inject(){
@@ -3030,13 +3047,13 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     if(ds.querySelector("#trigGradeBox")) return;
     var c=ctx(); if(!c) return;
     loadOpts(c.app_id, function(opts){
-      if(!opts || !opts.length) return;            // no verified pricing -> show nothing (safe)
+      if(!opts || !opts.length) return;
       var seen={}, grades=[];
       opts.forEach(function(o){ (o.config_key||"").split("|").forEach(function(part){
         if(part.indexOf("grade:")===0){ var g=part.slice(6); if(!seen[g]){ seen[g]=1; grades.push(g); } }
       }); });
       if(!grades.length) return;
-      if(ds.querySelector("#trigGradeBox")) return; // race guard
+      if(ds.querySelector("#trigGradeBox")) return;
       var box=document.createElement("div"); box.id="trigGradeBox"; box.className="dsplace";
       box.innerHTML='<div class="dsplace-h">Cover grade · verified pricing</div>'
         +'<div class="secchips" id="trigGradeChips">'
@@ -3046,13 +3063,10 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       box.querySelector("#trigGradeChips").addEventListener("click",function(e){
         var b=e.target.closest("[data-grade]"); if(!b) return;
         c.s.grade=b.dataset.grade;
-        c.s._cfgKey=cfgKey((function(){var sel={grade:c.s.grade};var sh=shapeOf(c.s);if(sh)sel.shape=sh;return sel;})());
         Array.prototype.forEach.call(box.querySelectorAll(".secchip"),function(x){ x.classList.toggle("on",x===b); });
-        try{ if(window.saveRooms) saveRooms(); }catch(_e){}
-        try{ if(window.trigLog) window.trigLog("grade_select",{app_id:c.app_id,config:{grade:c.s.grade}}); }catch(_e){}
-        showPrice(c);
+        applyGrade(c);
       });
-      showPrice(c);
+      showDisplay(c);
     });
   }
 
