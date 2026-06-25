@@ -1,0 +1,37 @@
+# Trig Studio repo — keep ONLY the app. Stray docs/scratch/backups must never land here.
+# (The public repo + deploy uses git add -A; on 2026-06-25 that leaked ClaudeInfo
+# handoff docs. This makes that impossible. Verified: app = index.html, admin.html,
+# vendor_scorecard.html, deploy.sh + asset dirs (arch/ cfg/ lifestyle/ models/ prodimg/,
+# images/glb only) — none of the patterns below are app files.)
+
+# stray docs / handoffs (the actual leak)
+*.md
+*HANDOFF*
+CHECKER_*
+# data / canonical / pricing — never in the app repo
+*.json
+*.csv
+*.tsv
+*.xlsx
+*.sql
+TrigMaster_Canonical*
+al_config_matrix*
+catalog.json
+# scripts & build artifacts
+*.py
+__pycache__/
+*.zip
+architect_build/
+# scratch / backups / junk (covers index.html.bak_dockfix etc.)
+_*
+*.bak
+*.bak*
+*.tmp
+*.log
+.DS_Store
+.~lock.*#
+*_wtest
+_wtest
+
+# App fetches catalog.json from the public feed at runtime — bundles no .json/.csv,
+# so the data ignores never hide a real app file. Force-add real ones with: git add -f <file>

@@ -2951,4 +2951,28 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 })();
 
 </script>
+
+<style id="trig-dockfix">/* TRIG-DOCKFIX v1 — desktop docked catalog: free the header + allow dismiss */
+@media (min-width:1024px){
+  #bar{ position:relative; z-index:80; }
+  body[data-tab="design"].has-room .sheet .panel{ top:var(--trigbarh,54px); height:calc(100% - var(--trigbarh,54px)); }
+  body[data-tab="design"].has-room .sheet .x{ display:block !important; }
+  body.trig-nocat[data-tab="design"].has-room .sheet{ display:none !important; }
+  body.trig-nocat[data-tab="design"].has-room #stagewrap{ right:0 !important; }
+  body.trig-nocat[data-tab="design"].has-room #addBtn{ display:block !important; }
+}
+</style>
+<script>/* TRIG-DOCKFIX v1 */(function(){
+  function barh(){ var b=document.getElementById('bar'); if(b&&b.offsetHeight) document.documentElement.style.setProperty('--trigbarh', b.offsetHeight+'px'); }
+  window.addEventListener('resize',barh); document.addEventListener('DOMContentLoaded',barh);
+  [200,600,1500].forEach(function(t){ setTimeout(barh,t); });
+  function desk(){ return window.matchMedia('(min-width:1024px)').matches; }
+  document.addEventListener('click', function(e){
+    var t=e.target;
+    var x = t.closest && t.closest('.sheet .x');
+    if(x && desk()){ document.body.classList.add('trig-nocat'); e.stopPropagation(); e.preventDefault(); barh(); return; }
+    var add = t.closest && t.closest('#addBtn');
+    if(add){ document.body.classList.remove('trig-nocat'); }
+  }, true);
+})();</script>
 </body></html>
