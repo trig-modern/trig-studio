@@ -2975,4 +2975,94 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     if(add){ document.body.classList.remove('trig-nocat'); }
   }, true);
 })();</script>
+
+<script>/* TRIG-GRADE-V1 — data-driven cover-grade selector + verified pricing (Architect 2026-06-25)
+ * Additive: wraps renderInspector, appends a grade chip row ONLY for pieces that have
+ * verified configs in trade_prices_cfg (via get_config_options). Picking a grade shows the
+ * exact verified Retail + Trade from get_price. No verified row -> "Trade — confirm with Trig".
+ * Net only renders for trade-approved accounts (server gate). Non-AL pieces: untouched. */
+(function(){
+  "use strict";
+  var URL="https://xyfogedlowneaevmjkci.supabase.co", KEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu", SB=null;
+  function sb(){ try{ if(!SB && window.supabase) SB=window.supabase.createClient(URL,KEY);}catch(e){} return SB; }
+  function norm(v){ return String(v==null?"":v).trim().toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,""); }
+  function cfgKey(sel){ var p=[]; Object.keys(sel||{}).forEach(function(a){ var v=sel[a]; if(v==null||v==="")return; p.push(norm(a)+":"+norm(v)); }); return p.sort().join("|"); }
+  function money(n){ return (n==null)?null:"$"+Math.round(n).toLocaleString(); }
+  function titleCase(g){ return g.replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+
+  function ctx(){
+    try{
+      var pc=window.curPiece&&curPiece(); if(!pc)return null;
+      var s=pc.spec, al=pc.kind==="al";
+      var prod = al ? (window.CATALOG||[]).find(function(p){return p.cfg===s.model;})
+                    : (window.byId?byId(s.id):null);
+      if(!prod || prod.id==null) return null;
+      return { pc:pc, s:s, app_id:String(prod.id) };
+    }catch(e){ return null; }
+  }
+  var optCache={};
+  function loadOpts(app_id, cb){
+    if(app_id in optCache) return cb(optCache[app_id]);
+    var c=sb(); if(!c) return cb(null);
+    c.rpc("get_config_options",{_app_id:app_id}).then(function(r){ optCache[app_id]=(r&&r.data)||[]; cb(optCache[app_id]); }, function(){ cb(null); });
+  }
+  function shapeOf(s){ var sh=s.config||""; return /^(sofa|loveseat|l_l|l_r|u)$/.test(sh)?sh:""; }
+
+  function showPrice(c){
+    var el=document.getElementById("trigGradePrice"); if(!el) return;
+    if(!c.s.grade){ el.innerHTML='<span style="color:#86868b">Pick a grade for verified pricing</span>'; return; }
+    var sel={grade:c.s.grade}; var sh=shapeOf(c.s); if(sh) sel.shape=sh;
+    var key=cfgKey(sel); el.innerHTML='<span style="color:#86868b">…</span>';
+    var cl=sb(); if(!cl) return;
+    cl.rpc("get_price",{_app_id:c.app_id,_config_key:key}).then(function(r){
+      var row=(r&&r.data&&r.data[0])||{}; var net=row.net, retail=row.retail;
+      var e2=document.getElementById("trigGradePrice"); if(!e2) return;
+      if(net==null && retail==null){ e2.innerHTML='<b>Trade — confirm with Trig</b>'+(sh?' <span style="color:#86868b">('+sh.replace("_"," ")+' — configured price by quote)</span>':''); return; }
+      var parts=[];
+      if(retail!=null) parts.push('Retail '+money(retail));
+      parts.push(net!=null ? '<b style="color:#e2562a">Trade '+money(net)+'</b>' : '<span style="color:#86868b">Trade — confirm with Trig</span>');
+      e2.innerHTML=parts.join(' &nbsp;·&nbsp; ');
+    }, function(){ var e2=document.getElementById("trigGradePrice"); if(e2)e2.innerHTML='<span style="color:#86868b">Trade — confirm with Trig</span>'; });
+  }
+
+  function inject(){
+    var ds=document.getElementById("dside"); if(!ds || !ds.classList.contains("on")) return;
+    if(ds.querySelector("#trigGradeBox")) return;
+    var c=ctx(); if(!c) return;
+    loadOpts(c.app_id, function(opts){
+      if(!opts || !opts.length) return;            // no verified pricing -> show nothing (safe)
+      var seen={}, grades=[];
+      opts.forEach(function(o){ (o.config_key||"").split("|").forEach(function(part){
+        if(part.indexOf("grade:")===0){ var g=part.slice(6); if(!seen[g]){ seen[g]=1; grades.push(g); } }
+      }); });
+      if(!grades.length) return;
+      if(ds.querySelector("#trigGradeBox")) return; // race guard
+      var box=document.createElement("div"); box.id="trigGradeBox"; box.className="dsplace";
+      box.innerHTML='<div class="dsplace-h">Cover grade · verified pricing</div>'
+        +'<div class="secchips" id="trigGradeChips">'
+        + grades.map(function(g){ return '<button class="secchip'+(c.s.grade===g?" on":"")+'" data-grade="'+g+'">'+titleCase(g)+'</button>'; }).join("")
+        +'</div><div id="trigGradePrice" style="margin-top:8px;font-size:13px"></div>';
+      ds.appendChild(box);
+      box.querySelector("#trigGradeChips").addEventListener("click",function(e){
+        var b=e.target.closest("[data-grade]"); if(!b) return;
+        c.s.grade=b.dataset.grade;
+        c.s._cfgKey=cfgKey((function(){var sel={grade:c.s.grade};var sh=shapeOf(c.s);if(sh)sel.shape=sh;return sel;})());
+        Array.prototype.forEach.call(box.querySelectorAll(".secchip"),function(x){ x.classList.toggle("on",x===b); });
+        try{ if(window.saveRooms) saveRooms(); }catch(_e){}
+        try{ if(window.trigLog) window.trigLog("grade_select",{app_id:c.app_id,config:{grade:c.s.grade}}); }catch(_e){}
+        showPrice(c);
+      });
+      showPrice(c);
+    });
+  }
+
+  function hook(){ if(window.renderInspector && !window.renderInspector.__trigGrade){
+    var orig=window.renderInspector;
+    window.renderInspector=function(){ var r=orig.apply(this,arguments); setTimeout(inject,0); return r; };
+    window.renderInspector.__trigGrade=true;
+  } }
+  var t=0; (function tick(){ try{hook();}catch(e){} if(++t<10) setTimeout(tick,600); })();
+})();
+
+</script>
 </body></html>
