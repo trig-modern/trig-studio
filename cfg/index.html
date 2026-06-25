@@ -398,7 +398,7 @@ function render(){
  { const G=state.grade||(sw&&sw.grade);
    if(sku && G){
      var _row=VTABLE?(VTABLE[_ckey(state.mat,G)]||null):null;
-     if(_row && _row.retail!=null){ pr.innerHTML=money(_row.retail)+' <small>retail</small>'+(_row.net!=null?' <span style="color:#86868b">\u00b7 net '+money(_row.net)+'</span>':''); ready=true; }
+     if(_row && _row.retail!=null){ pr.innerHTML=money(_row.retail)+' <small>retail</small>'+(_row.net!=null?' <small style="color:#86868b;font-weight:600">\u00b7 net '+money(_row.net)+'</small>':''); ready=true; }
      else if(!VTABLE || VEMPTY){ const k=priceKey(state.mat,G); const w=k&&sku.w?sku.w[k]:null; if(w!=null){ pr.innerHTML=money((w+upcharge(sku.seats||1))*2.5)+' <small>retail (est.)</small>'; ready=true; } else { pr.innerHTML='<small>Ask Trig for pricing</small>'; } }
      else { pr.innerHTML='<small>Confirm with Trig for this cover</small>'; }
    } else { pr.textContent = sku ? (G?"Select a swatch":"Select a grade") : "\u2014"; }
