@@ -3134,10 +3134,22 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function ST(){ try{ return state; }catch(e){ return null; } }
 
   /* ---------- persistence ---------- */
-  var meta={name:"",client:""};
+  var meta={name:"",client:"",notes:{}};
   function isQuoteRoom(){ var s=ST(); return !!(s && s.room && s.room.quoteOnly); }
-  function saveQuote(){ if(!isQuoteRoom())return; var s=ST(); try{ localStorage.setItem(KEY, JSON.stringify({pieces:(s&&s.pieces)||[], name:meta.name, client:meta.client})); }catch(e){} }
-  function loadQuote(){ var d={pieces:[],name:"",client:""}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; return d; }
+  function saveQuote(){ if(!isQuoteRoom())return; var s=ST(); try{ localStorage.setItem(KEY, JSON.stringify({pieces:(s&&s.pieces)||[], name:meta.name, client:meta.client, notes:meta.notes})); }catch(e){} }
+  function loadQuote(){ var d={pieces:[],name:"",client:"",notes:{}}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; meta.notes=d.notes||{}; return d; }
+  function cap(x){ x=String(x||""); return x.charAt(0).toUpperCase()+x.slice(1); }
+  function shapeLabel(c){ var m={sofa:"Sofa",loveseat:"Loveseat",l_l:"L · chaise left",l_r:"L · chaise right",u:"U-sectional"}; return m[c]||cap(String(c).replace(/_/g," ")); }
+  // human config string for the internal order sheet (shape · grade · cover · arm/base/cushion · orient · size)
+  function configStr(s){ var p=[];
+    if(s.config) p.push(shapeLabel(s.config));
+    if(s.coverGrade) p.push(s.coverGrade); else if(s.coverType) p.push(cap(s.coverType));
+    if(s.coverName) p.push(s.coverName);
+    if(s.opts){ Object.keys(s.opts).forEach(function(k){ var v=s.opts[k]; if(v&&String(v).length) p.push(cap(k)+": "+v); }); }
+    if(s.orient && s.orient!=="Standard") p.push("Orient: "+s.orient);
+    if(s.size && s.size!=="Standard") p.push("Size: "+s.size);
+    return p.join(" · ");
+  }
 
   /* ---------- styles ---------- */
   function injectCSS(){
@@ -3168,6 +3180,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       ".qp-qty button{width:26px;height:26px;border:1px solid #dcd8d2;background:#fff;border-radius:7px;cursor:pointer;font-size:15px;line-height:1;}",
       ".qp-qty button:hover{border-color:#b9b3ab;}",
       ".qp-rm{color:#b00;cursor:pointer;border:0;background:none;font-size:13px;}",
+      ".qp-note{margin-top:6px;width:100%;max-width:320px;padding:5px 8px;border:1px solid #e6e2dc;border-radius:7px;font-size:12px;color:#555;background:#fcfbf9;}",
+      ".qp-note:focus{border-color:#b9b3ab;outline:none;}",
       ".qp-trade{color:var(--tint,#e0512f);font-weight:700;}",
       ".qp-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-top:18px;}",
       ".qp-tot{font-size:15px;} .qp-tot b{font-size:20px;}",
@@ -3210,9 +3224,12 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       retailTot+=line; n+=q;
       if(s.trade_price!=null) tradeTot+=s.trade_price*q;
       var dims=(s.wIn?(Math.round(s.wIn)+'″W'):'')+(s.dIn?(' × '+Math.round(s.dIn)+'″D'):'')+(s.heightIn?(' × '+Math.round(s.heightIn)+'″H'):'');
-      var cover=[s.coverName||'', s.coverGrade?('· '+s.coverGrade):''].join(' ').trim();
+      var subA=[]; if(s.coverName)subA.push(s.coverName); if(s.coverGrade)subA.push(s.coverGrade); if(s.config)subA.push(shapeLabel(s.config)); if(s.sku)subA.push("SKU "+s.sku);
+      var subtext=subA.join(' · ');
+      var note=(meta.notes&&meta.notes[k])||'';
       return '<tr data-k="'+esc(k)+'">'
-        +'<td><div class="qp-nm">'+esc(s.modelLabel||s.model||'—')+'</div>'+(cover?'<div class="qp-sub">'+esc(cover)+'</div>':'')+'</td>'
+        +'<td><div class="qp-nm">'+esc(s.modelLabel||s.model||'—')+'</div>'+(subtext?'<div class="qp-sub">'+esc(subtext)+'</div>':'')
+          +'<input class="qp-note" data-k="'+esc(k)+'" placeholder="+ note (e.g. contrast welt, COM, sidemark)" value="'+esc(note)+'"></td>'
         +'<td>'+esc(s.vendor||'—')+'</td>'
         +'<td class="qp-sub">'+(dims||'—')+'</td>'
         +'<td class="c"><span class="qp-qty"><button data-act="minus">–</button><span>'+q+'</span><button data-act="plus">+</button></span></td>'
@@ -3233,7 +3250,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       +tableOrEmpty
       +'<div class="qp-foot"><div class="qp-tot">Retail total <b>'+money(retailTot)+'</b>'+(showTrade?(' &nbsp;·&nbsp; <span class="qp-trade">Trade '+money(tradeTot)+'</span>'):'')+'</div>'
       +'<div class="qp-actions"><button class="qp-btn" id="qpAdd">+ Add items</button>'
-      +'<button class="qp-btn" id="qpSheet"'+(rs.length?'':' disabled')+'>Spec sheet (PDF)</button>'
+      +'<button class="qp-btn" id="qpClient"'+(rs.length?'':' disabled')+'>Client PDF</button>'
+      +'<button class="qp-btn" id="qpOrder"'+(rs.length?'':' disabled')+'>Order sheet</button>'
       +'<button class="qp-btn tint" id="qpEmail"'+(rs.length?'':' disabled')+'>Email to Trig</button>'
       +'<button class="qp-btn" id="qpClear"'+(rs.length?'':' disabled')+'>Clear</button></div></div>'
       +'</div>';
@@ -3252,9 +3270,14 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     });
     var add0=el("qpAdd0"); if(add0) add0.onclick=addItems;
     var add=el("qpAdd"); if(add) add.onclick=addItems;
-    var sh=el("qpSheet"); if(sh) sh.onclick=buildQuoteSheet;
+    var bc=el("qpClient"); if(bc) bc.onclick=function(){ buildSheet("client"); };
+    var bo=el("qpOrder"); if(bo) bo.onclick=function(){ buildSheet("order"); };
     var em=el("qpEmail"); if(em) em.onclick=emailQuote;
     var cls=el("qpClear"); if(cls) cls.onclick=clearQuote;
+    // per-line notes
+    p.querySelectorAll(".qp-note").forEach(function(inp){
+      inp.oninput=function(){ var k=inp.getAttribute("data-k"); meta.notes[k]=inp.value; saveQuote(); };
+    });
   }
 
   /* ---------- actions ---------- */
@@ -3311,31 +3334,46 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 
   /* ---------- export ---------- */
   function quoteRows(){ return rows().map(function(it){ return {s:it.s,qty:it.qty}; }); }
-  function buildQuoteSheet(){
+  function buildSheet(mode){
+    var order=(mode==="order");
     var rs=quoteRows(); if(!rs.length) return;
     var showTrade=tradeApproved(), retailTot=0, tradeTot=0;
     var body=rs.map(function(it,i){ var s=it.s, price=s.price||0, line=price*it.qty; retailTot+=line; if(s.trade_price!=null)tradeTot+=s.trade_price*it.qty;
       var dims=(s.wIn?(Math.round(s.wIn)+'″W'):'')+(s.dIn?(' × '+Math.round(s.dIn)+'″D'):'')+(s.heightIn?(' × '+Math.round(s.heightIn)+'″H'):'');
       var cover=[s.coverName||'', s.coverGrade?('· '+s.coverGrade):''].join(' ').trim();
+      var note=(meta.notes&&meta.notes[pkey(s)])||'';
+      if(order){
+        return '<tr><td>'+(i+1)+'</td>'
+          +'<td class="pm">'+esc(s.modelLabel||s.model||'—')+(cover?'<div class="sub">'+esc(cover)+'</div>':'')+'<div class="sub">'+esc(s.vendor||'')+'</div></td>'
+          +'<td class="mono">'+esc(s.sku||'—')+'</td>'
+          +'<td class="sub">'+(esc(configStr(s))||'—')+(dims?'<div>'+dims+'</div>':'')+'</td>'
+          +'<td class="c">'+it.qty+'</td>'
+          +'<td class="r">'+(s.trade_price!=null?money(s.trade_price):'—')+'</td>'
+          +'<td class="r">'+(price?money(price):'Confirm')+'</td>'
+          +'<td class="sub">'+esc(note)+'</td></tr>';
+      }
       return '<tr><td>'+(i+1)+'</td><td class="pm">'+esc(s.modelLabel||s.model||'—')+(cover?'<div class="sub">'+esc(cover)+'</div>':'')+'</td><td>'+esc(s.vendor||'—')+'</td><td>'+(dims||'—')+'</td><td class="c">'+it.qty+'</td><td class="r">'+(price?money(price):'—')+'</td><td class="r">'+(price?money(line):'Confirm')+'</td></tr>';
     }).join('');
     var date=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-    var doc='<!doctype html><html><head><meta charset="utf-8"><title>Trig Modern — Quote</title><style>'
+    var head=order
+      ? '<thead><tr><th>#</th><th>Item</th><th>SKU</th><th>Configuration</th><th class="c">Qty</th><th class="r">Net</th><th class="r">Retail</th><th>Note</th></tr></thead>'
+      : '<thead><tr><th>#</th><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Unit</th><th class="r">Line</th></tr></thead>';
+    var foot=order
+      ? '<tfoot><tr><td colspan="5" class="r">Totals</td><td class="r trade">'+(showTrade?money(tradeTot):'—')+'</td><td class="r">'+money(retailTot)+'</td><td></td></tr></tfoot>'
+      : '<tfoot><tr><td colspan="6" class="r">Retail total</td><td class="r">'+money(retailTot)+'</td></tr></tfoot>';
+    var ttl=order?'Order Worksheet · INTERNAL':'Quote';
+    var doc='<!doctype html><html><head><meta charset="utf-8"><title>Trig Modern — '+ttl+'</title><style>'
       +'*{box-sizing:border-box}body{font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c1a18;margin:0;padding:40px;background:#fff}'
       +'.wm{font-family:Georgia,serif;font-size:24px}.wm b{color:#b5651d}.hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #1c1a18;padding-bottom:14px}'
       +'.ttl{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#777}.meta{display:flex;gap:30px;margin:18px 0 20px;flex-wrap:wrap}.meta div{font-size:12px;color:#777}.meta b{display:block;font-size:16px;color:#1c1a18;margin-top:2px}'
       +'table{width:100%;border-collapse:collapse;margin-top:8px}th{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#777;text-align:left;border-bottom:1.5px solid #1c1a18;padding:8px 10px}'
-      +'td{padding:9px 10px;border-bottom:1px solid #eee;font-size:13px;vertical-align:top}.pm{font-weight:600}.sub{color:#888;font-weight:400;font-size:11.5px}.c{text-align:center}.r{text-align:right;white-space:nowrap}'
+      +'td{padding:9px 10px;border-bottom:1px solid #eee;font-size:13px;vertical-align:top}.pm{font-weight:600}.sub{color:#888;font-weight:400;font-size:11.5px}.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}.c{text-align:center}.r{text-align:right;white-space:nowrap}'
       +'tfoot td{border-top:2px solid #1c1a18;border-bottom:0;font-weight:700;font-size:15px;padding-top:12px}.trade{color:#e0512f}'
       +'.note{margin-top:22px;font-size:11px;color:#999}@media print{body{padding:0}}</style></head><body>'
-      +'<div class="hd"><div class="wm">Trig <b>Modern</b></div><div style="text-align:right"><div class="ttl">Quote</div><div style="font-size:12px;color:#777">'+esc(date)+'</div></div></div>'
-      +'<div class="meta">'+(meta.name?'<div>Quote<b>'+esc(meta.name)+'</b></div>':'')+(meta.client?'<div>Client<b>'+esc(meta.client)+'</b></div>':'')+'<div>Prepared by<b>Trig Modern · Raleigh, NC</b></div></div>'
-      +'<table><thead><tr><th>#</th><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Unit</th><th class="r">Line</th></tr></thead>'
-      +'<tbody>'+body+'</tbody>'
-      +'<tfoot><tr><td colspan="6" class="r">Retail total</td><td class="r">'+money(retailTot)+'</td></tr>'
-      +(showTrade?('<tr><td colspan="6" class="r trade">Trade total</td><td class="r trade">'+money(tradeTot)+'</td></tr>'):'')
-      +'</tfoot></table>'
-      +'<div class="note">Pricing reflects verified Trig figures where available; items marked “Confirm” are configured by quote. Freight, COM, and lead times confirmed at order. Estimate only — not a final invoice.</div>'
+      +'<div class="hd"><div class="wm">Trig <b>Modern</b></div><div style="text-align:right"><div class="ttl">'+ttl+'</div><div style="font-size:12px;color:#777">'+esc(date)+'</div></div></div>'
+      +'<div class="meta">'+(meta.name?'<div>Quote<b>'+esc(meta.name)+'</b></div>':'')+(meta.client?'<div>Client<b>'+esc(meta.client)+'</b></div>':'')+(order?'<div>Type<b>Internal order worksheet</b></div>':'')+'<div>Prepared by<b>Trig Modern · Raleigh, NC</b></div></div>'
+      +'<table>'+head+'<tbody>'+body+'</tbody>'+foot+'</table>'
+      +'<div class="note">'+(order?'INTERNAL — includes net + manufacturer SKU + configuration for ordering. Not for the client. ':'')+'Pricing reflects verified Trig figures where available; items marked “Confirm” are configured by quote. Freight, COM, and lead times confirmed at order. Estimate only — not a final invoice.</div>'
       +'<script>window.onload=function(){setTimeout(function(){window.print();},250);}<\/script></body></html>';
     var w=window.open("","_blank"); if(w){ w.document.write(doc); w.document.close(); }
   }
@@ -3370,6 +3408,50 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 
   function init(){ injectCSS(); addButtons(); }
   var t=0; (function tick(){ try{ init(); }catch(e){} if(++t<25) setTimeout(tick,400); })();
+})();
+</script>
+<script>
+/* === TRIG-UX-EXITS-V1 (Architect) === */
+/* TRIG-UX-EXITS-V1 — guaranteed exits / no dead ends (Architect 2026-06-25)
+ * Research: every screen needs a clear way out; Esc + visible close are table stakes. We kept
+ * shipping trap states (room with no exit, overlay with no X). This adds ONE global Escape handler
+ * that closes the TOPMOST open surface, reusing the app's own close functions. Also ensures the
+ * configurator/picker sheet always shows its X (the desktop dock CSS had hidden it). Purely
+ * additive — no existing behavior changes except gaining an exit. */
+(function(){
+  "use strict";
+  function el(id){ return document.getElementById(id); }
+  function shown(id){ var x=el(id); return x && !x.classList.contains("gone"); }
+  function onCls(id){ var x=el(id); return x && x.classList.contains("on"); }
+  function click(id){ var x=el(id); if(x){ x.click(); return true; } return false; }
+
+  function closeTopmost(){
+    // precedence: most-modal / most-recently-opened first
+    if(onCls("sendModal")){ try{ if(window.closeSend) return closeSend(),true; }catch(e){} return click("smX"); }
+    if(onCls("sheet")){ try{ if(window.closeSheet) return closeSheet(),true; }catch(e){} return true; }
+    if(shown("catdetail")){ return click("cdBack"); }
+    if(shown("catalogue")){ return click("catBack"); }
+    if(document.body.classList.contains("quote-mode")){ try{ if(window.trigToggleQuote) return trigToggleQuote(),true; }catch(e){} }
+    if(shown("portal")){ try{ if(window.closePortal) return closePortal(),true; }catch(e){} }
+    return false;
+  }
+
+  document.addEventListener("keydown", function(e){
+    if(e.key!=="Escape" && e.keyCode!==27) return;
+    // don't hijack Esc while typing in a field (let it blur/clear first)
+    var t=e.target, tag=(t&&t.tagName||"").toLowerCase();
+    if(tag==="input"||tag==="textarea"||tag==="select"||(t&&t.isContentEditable)){ try{ t.blur(); }catch(_){} return; }
+    if(closeTopmost()) e.preventDefault();
+  }, true);
+
+  // make the sheet's close (X) visible even when docked on desktop
+  function css(){
+    if(el("uxExitCSS")) return;
+    var s=document.createElement("style"); s.id="uxExitCSS";
+    s.textContent="body[data-tab=\"design\"].has-room .sheet .x{display:flex!important;align-items:center;justify-content:center;}";
+    document.head.appendChild(s);
+  }
+  css();
 })();
 </script>
 </body></html>
