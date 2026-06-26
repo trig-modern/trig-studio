@@ -3594,4 +3594,40 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   var t=0; (function tick(){ try{ wire(); }catch(e){} hideIfClosed(); if(++t<25) setTimeout(tick,400); })();
 })();
 </script>
+<script>
+/* === TRIG-A11Y-V1 (Architect) === */
+/* TRIG-A11Y-V1 — additive consistency + accessibility layer (Architect 2026-06-25)
+ * Closes the "looks off / inconsistent" gap WITHOUT risky surgery on existing styles. Purely additive:
+ *  (1) keyboard focus rings via :focus-visible — shows ONLY on keyboard nav, zero change for mouse users
+ *      (a real WCAG gap; keyboard users currently get no visible focus).
+ *  (2) respects prefers-reduced-motion (collapses transitions/animations) — accessibility + comfort.
+ *  (3) standardizes hover/active feel on the controls THIS team's modules own (quote, nav, sticky bar)
+ *      so they behave identically everywhere. All values reference the app's tokens (--accent etc.).
+ * Tokens documented in architect_build/DESIGN_TOKENS.md. */
+(function(){
+  "use strict";
+  if(document.getElementById("trigA11yCSS")) return;
+  var s=document.createElement("style"); s.id="trigA11yCSS";
+  s.textContent=[
+    /* 1) keyboard-only focus rings (mouse clicks never trigger :focus-visible) */
+    "a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,"
+      +"[tabindex]:focus-visible,.pill:focus-visible,.sw:focus-visible,.qp-btn:focus-visible,.secchip:focus-visible,"
+      +"[data-tab]:focus-visible,[data-act]:focus-visible{outline:2px solid var(--accent,#e2562a);outline-offset:2px;border-radius:8px;}",
+    /* don't double-draw the default focus ring on top of ours */
+    "a:focus-visible,button:focus-visible{ } ",
+
+    /* 2) reduced-motion comfort/accessibility */
+    "@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}}",
+
+    /* 3) consistent interactive feel on the controls our modules own (scoped — no app-wide override) */
+    ".qp-btn,#cfgStickyAdd,#qbDash,#qbQuote,#ptQuote{transition:filter .12s ease, transform .08s ease, border-color .12s ease, background .12s ease;}",
+    ".qp-btn:hover{border-color:var(--line,#d2d2d7);}",
+    ".qp-btn.tint:hover,.qp-btn.pri:hover,#cfgStickyAdd:hover,#ptQuote:hover{filter:brightness(.94);}",
+    ".qp-btn:active,#cfgStickyAdd:active,#qbDash:active,#qbQuote:active,#ptQuote:active{transform:translateY(1px);}",
+    /* comfortable tap targets on touch devices for the small qty steppers */
+    "@media (pointer:coarse){.qp-qty button{width:32px;height:32px;}}"
+  ].join("\n");
+  (document.head||document.documentElement).appendChild(s);
+})();
+</script>
 </body></html>
