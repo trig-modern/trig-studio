@@ -466,4 +466,98 @@ form.onsubmit=async e=>{ e.preventDefault();
    else alert("Could not send — please call Trig Modern."); }
  catch(_){ alert("Network error — please call Trig Modern."); }
 };
-</script></body></html>
+</script>
+<script>
+/* === TRIG-CFG-WIZARD-V1 === */
+/* TRIG-CFG-WIZARD-V1 — guided one-step-at-a-time configurator (Architect 2026-06-25)
+ * Evolves the step rail into a real wizard: shows ONE step at a time (Shape → Cover → Options →
+ * Review) with a clickable rail + Back/Continue, gating forward until the current step is satisfied.
+ * Implemented by toggling a .wzhide class on the EXISTING section elements (no DOM reparenting, so
+ * the cfg's own getElementById/render() are untouched). FAIL-OPEN: if it can't find the expected
+ * sections, it does nothing and the full flat layout shows — it can never trap the user. Polls light
+ * state from the DOM (seldim/selcover) to mark steps done. Same DOM in embed + standalone, so this
+ * is verifiable on the standalone /cfg/ page. */
+(function(){
+  "use strict";
+  function el(id){ return document.getElementById(id); }
+  function prevEl(id){ var e=el(id); return e?e.previousElementSibling:null; }
+  function txt(id){ var e=el(id); return e?(e.textContent||"").trim():""; }
+  function ok(){ return el("modelsub")&&el("tc-silrow")&&el("mat")&&el("grades")&&el("sw")&&document.querySelector(".selbar"); }
+
+  var wzStep=0;
+
+  function groups(){
+    var g=[
+      {k:"shape",  label:"Shape",   els:[prevEl("tc-silrow"), el("tc-silrow"), el("tc-variant")],
+        done:function(){ return txt("seldim")!=="" && txt("seldim")!=="—"; }},
+      {k:"cover",  label:"Cover",   els:[prevEl("mat"), el("mat"), prevEl("grades"), el("grades"), el("q"), el("sw")],
+        done:function(){ return txt("selcover")!=="" && txt("selcover")!=="—"; }},
+      {k:"options",label:"Options", els:[el("tc-options"), el("cfgcap")], done:function(){ return true; },
+        has:function(){ var o=el("tc-options"); return !!(o && o.children.length); }},
+      {k:"review", label:"Review",  els:[document.querySelector(".selbar")], done:function(){ return true; }}
+    ];
+    return g.filter(function(s){ return !s.has || s.has(); });
+  }
+  function allEls(gs){ var a=[]; gs.forEach(function(s){ s.els.forEach(function(e){ if(e) a.push(e); }); }); return a; }
+
+  function css(){
+    if(el("wzCSS")) return;
+    var s=document.createElement("style"); s.id="wzCSS";
+    s.textContent=[
+      "#wzSteps{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}",
+      ".cfgstep{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--line,#d2d2d7);border-radius:980px;font-size:12.5px;color:var(--muted,#86868b);cursor:pointer;background:#fff;transition:border-color .12s,color .12s;}",
+      ".cfgstep .n{width:18px;height:18px;border-radius:50%;background:var(--hair,#e8e8ed);color:var(--muted,#86868b);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}",
+      ".cfgstep.done{color:var(--ink,#1d1d1f);}.cfgstep.done .n{background:var(--accent,#e2562a);color:#fff;}",
+      ".cfgstep.cur{border-color:var(--accent,#e2562a);color:var(--ink,#1d1d1f);box-shadow:inset 0 0 0 1px var(--accent,#e2562a);}.cfgstep.cur .n{background:var(--accent,#e2562a);color:#fff;}",
+      ".cfgstep.lock{opacity:.5;cursor:not-allowed;}",
+      ".cfgstep:focus-visible{outline:2px solid var(--accent,#e2562a);outline-offset:2px;}",
+      ".wzhide{display:none!important;}",
+      "#wzNav{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:16px;}",
+      "#wzNav button{padding:12px 18px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--line,#d2d2d7);background:#fff;color:var(--ink,#1d1d1f);}",
+      "#wzNext{background:var(--accent,#e2562a)!important;color:#fff!important;border-color:transparent!important;}",
+      "#wzNext:disabled{opacity:.45;cursor:default;}",
+      "@media(max-width:640px){#wzNav button{flex:1;}}"
+    ].join("\n");
+    document.head.appendChild(s);
+  }
+
+  function ensure(){
+    if(el("wzSteps")) return true;
+    var sub=el("modelsub"); var sb=document.querySelector(".selbar");
+    if(!sub||!sub.parentNode||!sb||!sb.parentNode) return false;
+    var rail=document.createElement("div"); rail.id="wzSteps"; sub.parentNode.insertBefore(rail, sub.nextSibling);
+    var nav=document.createElement("div"); nav.id="wzNav";
+    nav.innerHTML='<button type="button" id="wzBack">‹ Back</button><button type="button" id="wzNext">Continue ›</button>';
+    sb.parentNode.insertBefore(nav, sb.nextSibling);
+    el("wzBack").onclick=function(){ if(wzStep>0){ wzStep--; apply(); window.scrollTo({top:0,behavior:"smooth"}); } };
+    el("wzNext").onclick=function(){ var gs=groups(); if(wzStep<gs.length-1 && gs[wzStep].done()){ wzStep++; apply(); window.scrollTo({top:0,behavior:"smooth"}); } };
+    return true;
+  }
+
+  function apply(){
+    if(!ok()){ return; }            // fail-open: leave the flat layout fully visible
+    css(); if(!ensure()) return;
+    var gs=groups();
+    if(wzStep>gs.length-1) wzStep=gs.length-1; if(wzStep<0) wzStep=0;
+    var fi=-1; for(var i=0;i<gs.length;i++){ if(!gs[i].done()){ fi=i; break; } } if(fi<0) fi=gs.length-1;
+    // hide every managed section, then reveal only the active step's
+    allEls(gs).forEach(function(e){ e.classList.add("wzhide"); });
+    gs[wzStep].els.forEach(function(e){ if(e) e.classList.remove("wzhide"); });
+    // rail
+    var rail=el("wzSteps");
+    rail.innerHTML=gs.map(function(s,i){ var done=(i<fi), cur=(i===wzStep), locked=(i>fi);
+      return '<button type="button" class="cfgstep'+(done?" done":"")+(cur?" cur":"")+(locked?" lock":"")+'" data-i="'+i+'"'+(locked?" disabled":"")+'><span class="n">'+(done?"✓":(i+1))+'</span>'+s.label+'</button>'; }).join("");
+    Array.prototype.forEach.call(rail.querySelectorAll("[data-i]"),function(b){
+      b.onclick=function(){ var i=+b.getAttribute("data-i"); var g2=groups(); var f2=-1; for(var j=0;j<g2.length;j++){ if(!g2[j].done()){ f2=j; break; } } if(f2<0)f2=g2.length-1; if(i<=f2){ wzStep=i; apply(); } };
+    });
+    // nav
+    var back=el("wzBack"), next=el("wzNext");
+    back.style.visibility = wzStep>0 ? "visible" : "hidden";
+    if(wzStep>=gs.length-1){ next.style.display="none"; }
+    else { next.style.display=""; next.disabled=!gs[wzStep].done(); next.textContent="Continue: "+gs[wzStep+1].label+" ›"; }
+  }
+
+  var t=0; (function tick(){ try{ if(ok()) apply(); }catch(e){} if(++t<7200) setTimeout(tick,500); })();
+})();
+</script>
+</body></html>

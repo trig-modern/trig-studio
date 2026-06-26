@@ -3140,6 +3140,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function loadQuote(){ var d={pieces:[],name:"",client:"",notes:{}}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; meta.notes=d.notes||{}; return d; }
   function cap(x){ x=String(x||""); return x.charAt(0).toUpperCase()+x.slice(1); }
   function shapeLabel(c){ var m={sofa:"Sofa",loveseat:"Loveseat",l_l:"L · chaise left",l_r:"L · chaise right",u:"U-sectional"}; return m[c]||cap(String(c).replace(/_/g," ")); }
+  // manufacturer order SKU: spec.sku (cfg) -> spec.order_sku -> live catalog lookup by id (feed field is order_sku, NOT sku)
+  function skuOf(s){ try{ if(s.sku) return s.sku; if(s.order_sku) return s.order_sku; if(s.id!=null && window.byId){ var p=byId(s.id); if(p && p.order_sku) return p.order_sku; } }catch(e){} return ""; }
   // human config string for the internal order sheet (shape · grade · cover · arm/base/cushion · orient · size)
   function configStr(s){ var p=[];
     if(s.config) p.push(shapeLabel(s.config));
@@ -3170,7 +3172,11 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       ".qp-fields input{padding:9px 11px;border:1px solid #dcd8d2;border-radius:10px;font-size:14px;min-width:200px;background:#fff;}",
       ".qp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;}",
       ".qp-tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid #ececec;border-radius:14px;overflow:hidden;min-width:560px;}",
-      "@media(max-width:640px){.qp-tbl th,.qp-tbl td{padding:9px 8px;font-size:12.5px;}.qp-wrap{padding:0 2px;}.qp-note{max-width:none;}}",
+      "@media(max-width:640px){.qp-tbl th,.qp-tbl td{padding:9px 8px;font-size:12.5px;}.qp-wrap{padding:0 2px;}.qp-note{max-width:none;}"
+        +".qp-tbl{min-width:0;}.qp-scroll{overflow-x:visible;}"
+        +".qp-tbl th:nth-child(2),.qp-tbl td:nth-child(2),.qp-tbl th:nth-child(3),.qp-tbl td:nth-child(3),.qp-tbl th:nth-child(5),.qp-tbl td:nth-child(5){display:none;}"
+        +".qp-tbl th,.qp-tbl td{padding:8px 5px;}.qp-qty{gap:5px;}.qp-qty button{width:27px;height:27px;}"
+        +".qp-rm{font-size:0;padding:0 2px;}.qp-rm::after{content:\"\\2715\";font-size:15px;}}",
       ".qp-tbl th{font:600 11px/1 var(--font,inherit);letter-spacing:.05em;text-transform:uppercase;color:#86868b;text-align:left;padding:12px 12px;border-bottom:1px solid #efece8;}",
       ".qp-tbl td{padding:12px 12px;border-bottom:1px solid #f3f1ed;font-size:13.5px;vertical-align:middle;}",
       ".qp-tbl tr:last-child td{border-bottom:0;}",
@@ -3226,7 +3232,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       retailTot+=line; n+=q;
       if(s.trade_price!=null) tradeTot+=s.trade_price*q;
       var dims=(s.wIn?(Math.round(s.wIn)+'″W'):'')+(s.dIn?(' × '+Math.round(s.dIn)+'″D'):'')+(s.heightIn?(' × '+Math.round(s.heightIn)+'″H'):'');
-      var subA=[]; if(s.coverName)subA.push(s.coverName); if(s.coverGrade)subA.push(s.coverGrade); if(s.config)subA.push(shapeLabel(s.config)); if(s.sku)subA.push("SKU "+s.sku);
+      var subA=[]; if(s.coverName)subA.push(s.coverName); if(s.coverGrade)subA.push(s.coverGrade); if(s.config)subA.push(shapeLabel(s.config)); var _sku=skuOf(s); if(_sku)subA.push("SKU "+_sku);
       var subtext=subA.join(' · ');
       var note=(meta.notes&&meta.notes[k])||'';
       return '<tr data-k="'+esc(k)+'">'
@@ -3347,7 +3353,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       if(order){
         return '<tr><td>'+(i+1)+'</td>'
           +'<td class="pm">'+esc(s.modelLabel||s.model||'—')+(cover?'<div class="sub">'+esc(cover)+'</div>':'')+'<div class="sub">'+esc(s.vendor||'')+'</div></td>'
-          +'<td class="mono">'+esc(s.sku||'—')+'</td>'
+          +'<td class="mono">'+esc(skuOf(s)||'—')+'</td>'
           +'<td class="sub">'+(esc(configStr(s))||'—')+(dims?'<div>'+dims+'</div>':'')+'</td>'
           +'<td class="c">'+it.qty+'</td>'
           +'<td class="r">'+(s.trade_price!=null?money(s.trade_price):'—')+'</td>'
