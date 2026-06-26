@@ -3158,7 +3158,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     s.textContent=[
       "body.quote-mode #stagewrap>#room,body.quote-mode #stagewrap>.zoom,body.quote-mode #roomBar,body.quote-mode #floorBar,body.quote-mode #roomtag,body.quote-mode #stagewrap>.empty,body.quote-mode #dside{display:none!important;}",
       "body.quote-mode #setup{display:none!important;}",
-      "body.quote-mode .tabs{display:none!important;}",
+      /* tabs stay visible in quote-mode so the nav is consistent; TRIG-NAV-V1 makes a tab click exit quote-mode */
       "body.quote-mode #newRoomBtn,body.quote-mode #sendBtn,body.quote-mode #addBtn,body.quote-mode #totalWrap{display:none!important;}",
       "body.quote-mode #stagewrap{position:absolute;top:0;left:0;right:0;bottom:0;overflow:auto;}",
       "#quotePanel{display:none;}",
@@ -3452,6 +3452,77 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     document.head.appendChild(s);
   }
   css();
+})();
+</script>
+<script>
+/* === TRIG-NAV-V1 (Architect) === */
+/* TRIG-NAV-V1 — unified, self-orienting top nav (Architect 2026-06-25)
+ * Research: one consistent nav model + a clear "you are here" state is the #1 thing that makes a
+ * complex app feel easy. The bar already has the destinations (Dashboard · Showroom · Design ·
+ * Cart/Quote); this makes them behave as ONE nav: (1) the active section is always highlighted,
+ * (2) the Cart/Quote button shows a live item-count badge for the current room, (3) clicking a
+ * Showroom/Design tab cleanly exits quote-mode so the tabs always work, (4) consistent grouping.
+ * Additive; reads state via the lexical global; uses a body/#room observer (no bare-binding traps). */
+(function(){
+  "use strict";
+  function el(id){ return document.getElementById(id); }
+  function ST(){ try{ return state; }catch(e){ return null; } }
+
+  function css(){
+    if(el("navCSS")) return;
+    var s=document.createElement("style"); s.id="navCSS";
+    s.textContent=[
+      /* active "you are here" for the Cart/Quote button + parity with the app's tab active state */
+      "#qbQuote.navon{color:var(--tint,#e0512f)!important;box-shadow:inset 0 -2px 0 var(--tint,#e0512f);font-weight:700;}",
+      "#qbDash{opacity:.92;}",
+      /* live cart count badge */
+      ".navbadge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;margin-left:7px;border-radius:9px;background:var(--tint,#e0512f);color:#fff;font:700 11px/1 var(--font,inherit);vertical-align:middle;}",
+      /* group: keep the nav (brand/dash/tabs/cart) left, push room/total/actions right — .sp already spacers, this just tightens spacing */
+      "#bar .tabs{margin-left:2px;}"
+    ].join("\n");
+    document.head.appendChild(s);
+  }
+
+  function sumQty(){
+    var n=0; try{ var s=ST(); if(window.specRows && s && s.room){ window.specRows().forEach(function(it){ n+=(it.qty||0); }); } }catch(e){}
+    return n;
+  }
+
+  function updateNav(){
+    var q=el("qbQuote"); if(!q) return;
+    // active state — Cart/Quote is "on" whenever the quote/cart panel is showing
+    q.classList.toggle("navon", document.body.classList.contains("quote-mode"));
+    // live item-count badge for the current room (hidden when empty or not in a room)
+    var n=sumQty();
+    var b=q.querySelector(".navbadge");
+    if(n>0){ if(!b){ b=document.createElement("span"); b.className="navbadge"; q.appendChild(b); } b.textContent=n; b.style.display=""; }
+    else if(b){ b.style.display="none"; }
+  }
+
+  // clicking a Showroom/Design tab while in the cart/quote view should cleanly leave it first
+  function tabExitsQuote(){
+    document.addEventListener("click", function(e){
+      var btn = e.target && e.target.closest && e.target.closest("#bar .tabs button");
+      if(btn && document.body.classList.contains("quote-mode")){
+        document.body.classList.remove("quote-mode");
+        try{ if(window.render) window.render(); }catch(_){}
+        // the button's own handler (setTab) runs after and shows the chosen view
+      }
+    }, true);
+  }
+
+  var wired=false;
+  function wire(){
+    css();
+    if(wired) return;
+    // observe body (class/data-tab changes) + #room (piece add/remove) to keep nav in sync
+    try{ new MutationObserver(updateNav).observe(document.body,{attributes:true,attributeFilter:["class","data-tab"]}); }catch(e){}
+    var room=el("room"); if(room){ try{ new MutationObserver(updateNav).observe(room,{childList:true}); }catch(e){} wired=true; }
+    tabExitsQuote();
+    updateNav();
+  }
+
+  var t=0; (function tick(){ try{ wire(); }catch(e){} updateNav(); if(++t<30) setTimeout(tick,400); })();
 })();
 </script>
 </body></html>
