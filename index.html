@@ -3630,6 +3630,161 @@ window.TRIG_PRICING_V2 = true;
 })();
 </script>
 <script>
+/* === TRIG-CFG-NATIVE-V1 (Architect 2026-06-26) === */
+/* TRIG-CFG-NATIVE-V1 — native in-app configurator (Architect 2026-06-26)
+ * Phase 2 of the configurator↔portal merge: a native panel that replaces the cfg/ IFRAME,
+ * driven by the SAME data the rest of the app uses — no second pricing pot, no postMessage bridge.
+ *   • configurable axes + price come from get_config_options(p.id) (THE pricing authority — can't drift)
+ *   • option metadata (fill/detail/seat/back) from config_shared; labels/dims from config_schemas
+ *   • Add → builds the same spec the iframe posted and calls window.onConfigured(spec)
+ * FLAG-GATED OFF: window.TRIG_NATIVE_CFG=false by default → openConfigurator still uses the iframe.
+ * Flip to true (per-session or at cutover) to use the native panel. Iframe stays the fallback until
+ * full parity (swatch sprite picker + orient/size nuance are the remaining gap — grade/shape/options
+ * + verified pricing are covered here). */
+(function(){
+  "use strict";
+  if(typeof window.TRIG_NATIVE_CFG==="undefined") window.TRIG_NATIVE_CFG=false;
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function money(n){ return (n==null)?null:"$"+(Math.round(Number(n)/5)*5).toLocaleString(); }
+  var QURL="https://xyfogedlowneaevmjkci.supabase.co", QKEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu", _sb=null;
+  function sb(){ try{ if(!_sb && window.supabase) _sb=window.supabase.createClient(QURL,QKEY);}catch(e){} return _sb; }
+
+  /* ---------- label helpers (config_key axis values -> human) ---------- */
+  function gradeLabel(v){ v=String(v||"");
+    var m={fabric_i:"Fabric I",fabric_ii:"Fabric II",fabric_iii:"Fabric III",fabric_iv:"Fabric IV",fabric_v:"Fabric V",
+      leather_c:"Leather C",leather_d_f:"Leather D/F",leather_g:"Leather G",leather_h:"Leather H",leather_j:"Leather J"};
+    return m[v]||v.replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+  function shapeLabel(v){ var m={sofa:"Sofa",loveseat:"Loveseat",l_l:"L · chaise left",l_r:"L · chaise right",u:"U-sectional"}; return m[v]||String(v).replace(/_/g," "); }
+  function sizeLabel(v){ return String(v).replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+  var AXIS_LABEL={grade:"Cover & grade",shape:"Shape",size:"Size"};
+  function valLabel(axis,v){ return axis==="grade"?gradeLabel(v):axis==="shape"?shapeLabel(v):sizeLabel(v); }
+
+  function parseKey(k){ var o={}; if(!k) return o; k.split("|").forEach(function(p){ var i=p.indexOf(":"); if(i>0) o[p.slice(0,i)]=p.slice(i+1); }); return o; }
+  function keyOf(sel,axes){ return axes.map(function(a){return a+":"+sel[a];}).filter(function(p){return p.split(":")[1];}).sort().join("|"); }
+
+  /* ---------- state ---------- */
+  var P=null, ROWS=[], AXES=[], SHARED=null, SEL={}, OPTSEL={};
+
+  function loadShared(cb){ if(SHARED) return cb(SHARED); var c=sb(); if(!c){return cb(null);}
+    c.from("config_shared").select("id,data").then(function(r){ SHARED={}; (r.data||[]).forEach(function(x){SHARED[x.id]=x.data;}); cb(SHARED); },function(){cb(null);}); }
+
+  function open(p){
+    P=p; ROWS=[]; AXES=[]; SEL={}; OPTSEL={};
+    try{ if(window.sheetOpen) sheetOpen("Configure · "+(p.model||"")); }catch(e){}
+    var host=ensureHost(); host.innerHTML='<div class="ncfg-load">Loading configuration…</div>';
+    var c=sb(); if(!c){ host.innerHTML='<div class="ncfg-load">Sign in to configure.</div>'; return; }
+    loadShared(function(){
+      c.rpc("get_config_options",{_app_id:String(p.id)}).then(function(r){
+        ROWS=(r.data||[]);
+        // discover axes present across all priced rows
+        var seen={}; ROWS.forEach(function(row){ var o=parseKey(row.config_key); Object.keys(o).forEach(function(a){seen[a]=1;}); });
+        AXES=["grade","shape","size"].filter(function(a){return seen[a];}).concat(Object.keys(seen).filter(function(a){return ["grade","shape","size"].indexOf(a)<0;}));
+        // default selection = first priced row
+        if(ROWS.length){ var d=parseKey(ROWS[0].config_key); AXES.forEach(function(a){ SEL[a]=d[a]; }); }
+        // default options
+        if(SHARED&&SHARED.OPT_DEF) OPTSEL=Object.assign({},SHARED.OPT_DEF);
+        render();
+      },function(){ host.innerHTML='<div class="ncfg-load">Couldn’t load pricing for this piece.</div>'; });
+    });
+  }
+
+  function valuesFor(axis){ var vals=[], s={}; ROWS.forEach(function(row){ var o=parseKey(row.config_key); var v=o[axis]; if(v!=null&&!s[v]){s[v]=1;vals.push(v);} }); return vals; }
+  function matchRow(){ var want=keyOf(SEL,AXES);
+    // exact match first; else match on the axes we have
+    var exact=ROWS.filter(function(r){return r.config_key===want;})[0]; if(exact)return exact;
+    return ROWS.filter(function(r){ var o=parseKey(r.config_key); return AXES.every(function(a){return !SEL[a]||o[a]===SEL[a];}); })[0]||null;
+  }
+
+  function css(){ if(el("ncfgCSS"))return; var s=document.createElement("style"); s.id="ncfgCSS";
+    s.textContent=[
+      "#ncfg{padding:4px 2px 90px;}",
+      ".ncfg-load{padding:40px 16px;color:var(--muted,#86868b);text-align:center;}",
+      ".ncfg-h{font-size:18px;font-weight:700;margin:2px 0 2px;}",
+      ".ncfg-sub{color:var(--muted,#86868b);font-size:13px;margin-bottom:14px;}",
+      ".ncfg-ax{margin:16px 0;}",
+      ".ncfg-ax>label{display:block;font:600 11px/1 inherit;letter-spacing:.05em;text-transform:uppercase;color:#86868b;margin-bottom:8px;}",
+      ".ncfg-chips{display:flex;flex-wrap:wrap;gap:8px;}",
+      ".ncfg-chip{padding:9px 13px;border:1px solid var(--line,#d2d2d7);border-radius:980px;background:#fff;font-size:13px;cursor:pointer;}",
+      ".ncfg-chip.on{border-color:var(--accent,#e2562a);box-shadow:inset 0 0 0 1px var(--accent,#e2562a);color:var(--ink,#1d1d1f);font-weight:600;}",
+      ".ncfg-chip:disabled{opacity:.4;cursor:not-allowed;}",
+      ".ncfg-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;}",
+      ".ncfg-opt label{font-size:13px;color:var(--ink,#1d1d1f);} .ncfg-opt select{padding:8px 10px;border:1px solid var(--line,#d2d2d7);border-radius:9px;font-size:13px;background:#fff;}",
+      ".ncfg-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--hair,#e8e8ed);padding:12px 14px;display:flex;align-items:center;gap:14px;margin:0 -2px;}",
+      ".ncfg-price b{font-size:19px;} .ncfg-price .yp{color:var(--accent,#e2562a);font-weight:700;} .ncfg-price .rt{color:var(--muted,#86868b);font-size:13px;margin-left:8px;}",
+      ".ncfg-add{margin-left:auto;padding:12px 22px;border:0;border-radius:11px;background:var(--accent,#e2562a);color:#fff;font-weight:700;font-size:14px;cursor:pointer;}",
+      ".ncfg-add:disabled{opacity:.45;cursor:default;}"
+    ].join("\n"); document.head.appendChild(s); }
+
+  function ensureHost(){ css(); var body=el("sheetBody")||document.body; var h=el("ncfg"); if(!h){ h=document.createElement("div"); h.id="ncfg"; } if(h.parentNode!==body){ body.appendChild(h); } return h; }
+
+  function render(){
+    var host=ensureHost(); if(!ROWS.length){ host.innerHTML='<div class="ncfg-load">No configurable options found for this piece.</div>'; return; }
+    var row=matchRow();
+    var photos=(P.photos||[]).filter(Boolean);
+    var html='';
+    html+='<div class="ncfg-h">'+esc(P.model||"")+'</div><div class="ncfg-sub">'+esc(P.vendor||"American Leather")+' · configure to order</div>';
+    if(photos[0]) html+='<div class="cd-media" style="margin-bottom:14px"><img src="'+esc(photos[0])+'" style="width:100%;border-radius:14px" onerror="this.style.display=\'none\'"/></div>';
+    // priced axes (grade/shape/size)
+    AXES.forEach(function(a){
+      var vals=valuesFor(a); if(vals.length<=1 && a!=="grade") return; // hide single-value non-grade axes
+      html+='<div class="ncfg-ax"><label>'+esc(AXIS_LABEL[a]||a)+'</label><div class="ncfg-chips">'+
+        vals.map(function(v){ return '<button class="ncfg-chip'+(SEL[a]===v?" on":"")+'" data-ax="'+esc(a)+'" data-v="'+esc(v)+'">'+esc(valLabel(a,v))+'</button>'; }).join("")+
+        '</div></div>';
+    });
+    // non-price options from config_shared.OPT (array of groups: {id,label,ch:[[val,label,upcharge,flag]]})
+    if(SHARED&&Array.isArray(SHARED.OPT)){ SHARED.OPT.forEach(function(grp){ if(!grp||!grp.ch) return;
+      var key=grp.id;
+      html+='<div class="ncfg-opt"><label>'+esc(grp.label||key)+'</label><select data-opt="'+esc(key)+'">'+
+        grp.ch.map(function(c){ var ov=c[0], ol=c[1]; return '<option value="'+esc(ov)+'"'+(OPTSEL[key]===ov?" selected":"")+'>'+esc(ol)+'</option>'; }).join("")+
+        '</select></div>';
+    }); }
+    // price bar
+    var net=row?row.net:null, retail=row?row.retail:null;
+    html+='<div class="ncfg-bar"><div class="ncfg-price">'+
+      (retail!=null?('<span class="yp">'+(net!=null?money(net):"Confirm")+'</span><span class="rt">retail '+money(retail)+'</span>'):'<span class="rt">Confirm with Trig</span>')+
+      '</div><button class="ncfg-add" id="ncfgAdd"'+(row?'':' disabled')+'>Add to room</button></div>';
+    host.innerHTML=html;
+    // wire
+    host.querySelectorAll(".ncfg-chip").forEach(function(b){ b.onclick=function(){ SEL[b.dataset.ax]=b.dataset.v; render(); }; });
+    host.querySelectorAll("[data-opt]").forEach(function(s){ s.onchange=function(){ OPTSEL[s.dataset.opt]=s.value; }; });
+    var add=el("ncfgAdd"); if(add) add.onclick=function(){ addConfigured(row); };
+  }
+
+  function addConfigured(row){
+    if(!row) return;
+    var sel=parseKey(row.config_key);
+    var spec={
+      id:P.id, model:P.model, modelLabel:P.model, vendor:P.vendor||"American Leather", category:P.category,
+      price:(row.retail!=null?Number(row.retail):P.price),       // retail
+      trade_price:(row.net!=null?Number(row.net):null),          // designer (retail − %), gated
+      wIn:P.wIn, dIn:P.dIn, heightIn:P.heightIn,
+      coverGrade:(sel.grade?gradeLabel(sel.grade):null),
+      config:(sel.shape||null),                                  // shape → app's sectional logic
+      config_key:row.config_key,
+      opts:Object.assign({},OPTSEL)
+    };
+    try{ if(window.onConfigured) window.onConfigured(spec); }catch(e){}
+    try{ if(window.trigLog) trigLog("configure",{app_id:P.id, meta:{config_key:row.config_key, native:1}}); }catch(e){}
+  }
+
+  /* ---------- gate: wrap openConfigurator ---------- */
+  function install(){
+    if(window._ncfgWrapped) return;
+    var orig=window.openConfigurator;
+    if(typeof orig!=="function") return;     // app not ready yet; retry
+    window._ncfgOrigOpen=orig;
+    window.openConfigurator=function(p){
+      if(window.TRIG_NATIVE_CFG && p && p.id!=null){ try{ return open(p); }catch(e){} }
+      return window._ncfgOrigOpen(p);
+    };
+    window._ncfgWrapped=true;
+    window.trigNativeConfigurator={ open:open, enable:function(v){ window.TRIG_NATIVE_CFG=(v!==false); } };
+  }
+  var t=0; (function tick(){ try{ install(); }catch(e){} if(!window._ncfgWrapped && ++t<40) setTimeout(tick,300); })();
+})();
+</script>
+<script>
 /* === TRIG-NAV-V1 (Architect) === */
 /* TRIG-NAV-V1 — unified, self-orienting top nav (Architect 2026-06-25)
  * Research: one consistent nav model + a clear "you are here" state is the #1 thing that makes a
