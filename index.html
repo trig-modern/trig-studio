@@ -3389,7 +3389,7 @@ window.TRIG_PRICING_V2 = true;
     }).join('');
 
     var tableOrEmpty = rs.length
-      ? '<div class="qp-scroll"><table class="qp-tbl"><thead><tr><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Designer</th><th class="r">Retail</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>'
+      ? '<div class="qp-scroll"><table class="qp-tbl"><thead><tr><th>Item</th><th>Brand</th><th>Dimensions</th><th class="c">Qty</th><th class="r">Your price</th><th class="r">Retail</th><th></th></tr></thead><tbody>'+body+'</tbody></table></div>'
       : '<div class="qp-empty"><b>Nothing here yet</b><div class="qp-sub" style="margin-top:6px">Add Trig pieces — grades &amp; verified pricing carry straight in.</div><button class="qp-btn pri" id="qpAdd0" style="margin-top:16px">+ Add items</button></div>';
 
     var isQ=isQuoteRoom();
@@ -3399,7 +3399,7 @@ window.TRIG_PRICING_V2 = true;
         +'<select id="qpClientSel"><option value="">— No client —</option>'+(clientsCache||[]).map(function(c){return '<option value="'+esc(c.id)+'"'+(meta.clientId===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join("")+'</select>'
         +'<button class="qp-btn" id="qpSwitch">⌄ My quotes</button></div>'):'')
       +tableOrEmpty
-      +'<div class="qp-foot"><div class="qp-tot"><span class="qp-trade">Designer '+(anyTrade?money(tradeTot):'—')+'</span> &nbsp;·&nbsp; Retail <b>'+money(retailTot)+'</b></div>'
+      +'<div class="qp-foot"><div class="qp-tot"><span class="qp-trade">Your price '+(anyTrade?money(tradeTot):'—')+'</span> &nbsp;·&nbsp; Retail <b>'+money(retailTot)+'</b></div>'
       +'<div class="qp-actions"><button class="qp-btn" id="qpAdd">+ Add items</button>'
       +'<button class="qp-btn" id="qpClientPdf"'+(rs.length?'':' disabled')+'>Client PDF</button>'
       +'<button class="qp-btn" id="qpOrder"'+(rs.length?'':' disabled')+'>Order sheet</button>'
