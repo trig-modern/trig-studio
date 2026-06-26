@@ -3643,7 +3643,7 @@ window.TRIG_PRICING_V2 = true;
  * + verified pricing are covered here). */
 (function(){
   "use strict";
-  if(typeof window.TRIG_NATIVE_CFG==="undefined") window.TRIG_NATIVE_CFG=false;
+  if(typeof window.TRIG_NATIVE_CFG==="undefined") window.TRIG_NATIVE_CFG=true; // native default; auto-falls back to the iframe for pieces w/o verified config pricing
   function el(id){ return document.getElementById(id); }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
   function money(n){ return (n==null)?null:"$"+(Math.round(Number(n)/5)*5).toLocaleString(); }
@@ -3660,6 +3660,17 @@ window.TRIG_PRICING_V2 = true;
   var AXIS_LABEL={grade:"Cover & grade",shape:"Shape",size:"Size"};
   function valLabel(axis,v){ return axis==="grade"?gradeLabel(v):axis==="shape"?shapeLabel(v):sizeLabel(v); }
 
+  // swatches for a grade token ("fabric_i","leather_d_f","fabric_v") from SHARED.SWATCHES
+  function matSwatches(gradeTok){
+    if(!SHARED||!Array.isArray(SHARED.SWATCHES)||!gradeTok) return [];
+    var mat=gradeTok.indexOf("leather")===0?"leather":(gradeTok.indexOf("fabric")===0?"fabric":"");
+    var letters=gradeTok.replace(/^(leather|fabric|microfiber)_?/,"").split("_").map(function(x){return x.toUpperCase();});
+    return SHARED.SWATCHES.filter(function(s){
+      var matchMat=(s.type===mat)||(mat==="fabric"&&s.type==="microfiber");
+      return matchMat && letters.indexOf(String(s.grade).toUpperCase())>=0;
+    });
+  }
+  function swatchById(id){ return (SHARED&&SHARED.SWATCHES||[]).filter(function(s){return s.id===id;})[0]||null; }
   function parseKey(k){ var o={}; if(!k) return o; k.split("|").forEach(function(p){ var i=p.indexOf(":"); if(i>0) o[p.slice(0,i)]=p.slice(i+1); }); return o; }
   function keyOf(sel,axes){ return axes.map(function(a){return a+":"+sel[a];}).filter(function(p){return p.split(":")[1];}).sort().join("|"); }
 
@@ -3677,6 +3688,9 @@ window.TRIG_PRICING_V2 = true;
     loadShared(function(){
       c.rpc("get_config_options",{_app_id:String(p.id)}).then(function(r){
         ROWS=(r.data||[]);
+        if(!ROWS.length){ // no verified config pricing for this piece → graceful fallback to the iframe
+          try{ if(window._ncfgOrigOpen) return window._ncfgOrigOpen(P); }catch(e){}
+        }
         // discover axes present across all priced rows
         var seen={}; ROWS.forEach(function(row){ var o=parseKey(row.config_key); Object.keys(o).forEach(function(a){seen[a]=1;}); });
         AXES=["grade","shape","size"].filter(function(a){return seen[a];}).concat(Object.keys(seen).filter(function(a){return ["grade","shape","size"].indexOf(a)<0;}));
@@ -3708,6 +3722,10 @@ window.TRIG_PRICING_V2 = true;
       ".ncfg-chip{padding:9px 13px;border:1px solid var(--line,#d2d2d7);border-radius:980px;background:#fff;font-size:13px;cursor:pointer;}",
       ".ncfg-chip.on{border-color:var(--accent,#e2562a);box-shadow:inset 0 0 0 1px var(--accent,#e2562a);color:var(--ink,#1d1d1f);font-weight:600;}",
       ".ncfg-chip:disabled{opacity:.4;cursor:not-allowed;}",
+      ".ncfg-sw{display:flex;flex-wrap:wrap;gap:9px;}",
+      ".ncfg-swc{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line,#d2d2d7);cursor:pointer;padding:0;}",
+      ".ncfg-swc.on{box-shadow:0 0 0 2px var(--accent,#e2562a);}",
+      ".ncfg-swname{font-size:12px;color:var(--muted,#86868b);margin-top:7px;}",
       ".ncfg-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;}",
       ".ncfg-opt label{font-size:13px;color:var(--ink,#1d1d1f);} .ncfg-opt select{padding:8px 10px;border:1px solid var(--line,#d2d2d7);border-radius:9px;font-size:13px;background:#fff;}",
       ".ncfg-bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--hair,#e8e8ed);padding:12px 14px;display:flex;align-items:center;gap:14px;margin:0 -2px;}",
@@ -3732,6 +3750,22 @@ window.TRIG_PRICING_V2 = true;
         vals.map(function(v){ return '<button class="ncfg-chip'+(SEL[a]===v?" on":"")+'" data-ax="'+esc(a)+'" data-v="'+esc(v)+'">'+esc(valLabel(a,v))+'</button>'; }).join("")+
         '</div></div>';
     });
+    // swatch picker (color within the selected grade; cosmetic — price unaffected)
+    if(SEL.grade){
+      var sws=matSwatches(SEL.grade);
+      // keep selection valid for the current grade; default to first
+      if(sws.length && !sws.some(function(s){return s.id===SEL.swatchId;})) SEL.swatchId=sws[0].id;
+      if(!sws.length) SEL.swatchId=null;
+      html+='<div class="ncfg-ax"><label>Color</label>';
+      if(sws.length){
+        var cur=swatchById(SEL.swatchId);
+        html+='<div class="ncfg-sw">'+sws.map(function(s){ return '<button class="ncfg-swc'+(SEL.swatchId===s.id?" on":"")+'" title="'+esc(s.cover+(s.color?" "+s.color:""))+'" data-sw="'+esc(s.id)+'" style="background:'+esc(s.hex)+'"></button>'; }).join("")+'</div>';
+        html+='<div class="ncfg-swname">'+(cur?esc(cur.cover+(cur.color?" "+cur.color:"")):"")+'</div>';
+      } else {
+        html+='<div class="ncfg-sub">Color specified on the order for this grade.</div>';
+      }
+      html+='</div>';
+    }
     // non-price options from config_shared.OPT (array of groups: {id,label,ch:[[val,label,upcharge,flag]]})
     if(SHARED&&Array.isArray(SHARED.OPT)){ SHARED.OPT.forEach(function(grp){ if(!grp||!grp.ch) return;
       var key=grp.id;
@@ -3746,7 +3780,8 @@ window.TRIG_PRICING_V2 = true;
       '</div><button class="ncfg-add" id="ncfgAdd"'+(row?'':' disabled')+'>Add to room</button></div>';
     host.innerHTML=html;
     // wire
-    host.querySelectorAll(".ncfg-chip").forEach(function(b){ b.onclick=function(){ SEL[b.dataset.ax]=b.dataset.v; render(); }; });
+    host.querySelectorAll(".ncfg-chip").forEach(function(b){ b.onclick=function(){ if(b.dataset.ax==="grade") SEL.swatchId=null; SEL[b.dataset.ax]=b.dataset.v; render(); }; });
+    host.querySelectorAll(".ncfg-swc").forEach(function(b){ b.onclick=function(){ SEL.swatchId=b.dataset.sw; render(); }; });
     host.querySelectorAll("[data-opt]").forEach(function(s){ s.onchange=function(){ OPTSEL[s.dataset.opt]=s.value; }; });
     var add=el("ncfgAdd"); if(add) add.onclick=function(){ addConfigured(row); };
   }
@@ -3754,12 +3789,15 @@ window.TRIG_PRICING_V2 = true;
   function addConfigured(row){
     if(!row) return;
     var sel=parseKey(row.config_key);
+    var sw=swatchById(SEL.swatchId);
     var spec={
       id:P.id, model:P.model, modelLabel:P.model, vendor:P.vendor||"American Leather", category:P.category,
       price:(row.retail!=null?Number(row.retail):P.price),       // retail
       trade_price:(row.net!=null?Number(row.net):null),          // designer (retail − %), gated
       wIn:P.wIn, dIn:P.dIn, heightIn:P.heightIn,
       coverGrade:(sel.grade?gradeLabel(sel.grade):null),
+      coverId:(sw?sw.id:null), coverName:(sw?(sw.cover+(sw.color?" "+sw.color:"")):null),
+      coverHex:(sw?sw.hex:null), coverType:(sw?sw.type:null),
       config:(sel.shape||null),                                  // shape → app's sectional logic
       config_key:row.config_key,
       opts:Object.assign({},OPTSEL)
