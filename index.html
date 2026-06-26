@@ -1689,7 +1689,7 @@ var AL_SECTIONAL_CONFIGS={"Copenhagen":{def:"l_r",opts:[{k:"sofa",label:"Sofa",w
 function _secLine(model){ return (model||"").replace(/ sofa ?& ?sectional| sectional| sofa/i,"").trim(); }
 var _MX_LINES=Object.keys(AL_MATRIX_CONFIGS).sort(function(a,b){return b.length-a.length;});
 function _matrixCfg(model){ var m=(model||"").toLowerCase().trim(); for(var i=0;i<_MX_LINES.length;i++){ var L=_MX_LINES[i].toLowerCase(); if(m===L||m.indexOf(L+" ")===0) return AL_MATRIX_CONFIGS[_MX_LINES[i]]; } return null; }
-var AL_MATRIX_PRICES={"Alessandro":{"sofa":{"t":1700,"r":5625},"loveseat":{"t":1675,"r":5550},"l_r":{"t":1925,"r":6375},"l_l":{"t":1925,"r":6375},"u":{"t":3475,"r":11475}},"Brooke":{"sofa":{"t":1700,"r":5625},"loveseat":{"t":1600,"r":5325},"l_r":{"t":1925,"r":6375},"l_l":{"t":1925,"r":6375},"u":{"t":3475,"r":11475}},"Carmet":{"sofa":{"t":1650,"r":5475},"loveseat":{"t":1575,"r":5175},"l_r":{"t":1800,"r":5925},"l_l":{"t":1800,"r":5925},"u":{"t":3225,"r":10650}},"Cooks":{"sofa":{"t":1800,"r":5925},"loveseat":{"t":1700,"r":5625},"l_r":{"t":1925,"r":6375},"l_l":{"t":1925,"r":6375},"u":{"t":3475,"r":11475}},"Doran":{"sofa":{"t":1650,"r":5475},"loveseat":{"t":1575,"r":5175},"l_r":{"t":1800,"r":5925},"l_l":{"t":1800,"r":5925},"u":{"t":3225,"r":10650}},"Estero":{"sofa":{"t":1650,"r":5475},"loveseat":{"t":1575,"r":5175},"l_r":{"t":1800,"r":5925},"l_l":{"t":1800,"r":5925},"u":{"t":3225,"r":10650}},"Henley":{"sofa":{"t":1700,"r":5625},"loveseat":{"t":1625,"r":5400},"l_r":{"t":1925,"r":6375},"l_l":{"t":1925,"r":6375},"u":{"t":3475,"r":11475}},"Lawson":{"sofa":{"t":1800,"r":5925},"loveseat":{"t":1700,"r":5625},"l_r":{"t":1925,"r":6375},"l_l":{"t":1925,"r":6375},"u":{"t":3475,"r":11475}},"Montara":{"sofa":{"t":1600,"r":5325},"loveseat":{"t":1550,"r":5100},"l_r":{"t":1750,"r":5775},"l_l":{"t":1750,"r":5775},"u":{"t":3125,"r":10350}},"Nash":{"sofa":{"t":2100,"r":6975},"loveseat":{"t":2025,"r":6750}},"Parker":{"sofa":{"t":1850,"r":6150},"l_r":{"t":2075,"r":6900},"l_l":{"t":2075,"r":6900},"u":{"t":3700,"r":12300}},"Steve":{"sofa":{"t":1800,"r":6000},"loveseat":{"t":1725,"r":5700},"l_r":{"t":2075,"r":6900},"l_l":{"t":2075,"r":6900},"u":{"t":3750,"r":12450}},"Tali":{"sofa":{"t":1600,"r":5325},"loveseat":{"t":1575,"r":5175},"l_r":{"t":1825,"r":6075},"l_l":{"t":1825,"r":6075},"u":{"t":3175,"r":10575}}};
+var AL_MATRIX_PRICES={"Alessandro":{"sofa":{"t":null,"r":5625},"loveseat":{"t":null,"r":5550},"l_r":{"t":null,"r":6375},"l_l":{"t":null,"r":6375},"u":{"t":null,"r":11475}},"Brooke":{"sofa":{"t":null,"r":5625},"loveseat":{"t":null,"r":5325},"l_r":{"t":null,"r":6375},"l_l":{"t":null,"r":6375},"u":{"t":null,"r":11475}},"Carmet":{"sofa":{"t":null,"r":5475},"loveseat":{"t":null,"r":5175},"l_r":{"t":null,"r":5925},"l_l":{"t":null,"r":5925},"u":{"t":null,"r":10650}},"Cooks":{"sofa":{"t":null,"r":5925},"loveseat":{"t":null,"r":5625},"l_r":{"t":null,"r":6375},"l_l":{"t":null,"r":6375},"u":{"t":null,"r":11475}},"Doran":{"sofa":{"t":null,"r":5475},"loveseat":{"t":null,"r":5175},"l_r":{"t":null,"r":5925},"l_l":{"t":null,"r":5925},"u":{"t":null,"r":10650}},"Estero":{"sofa":{"t":null,"r":5475},"loveseat":{"t":null,"r":5175},"l_r":{"t":null,"r":5925},"l_l":{"t":null,"r":5925},"u":{"t":null,"r":10650}},"Henley":{"sofa":{"t":null,"r":5625},"loveseat":{"t":null,"r":5400},"l_r":{"t":null,"r":6375},"l_l":{"t":null,"r":6375},"u":{"t":null,"r":11475}},"Lawson":{"sofa":{"t":null,"r":5925},"loveseat":{"t":null,"r":5625},"l_r":{"t":null,"r":6375},"l_l":{"t":null,"r":6375},"u":{"t":null,"r":11475}},"Montara":{"sofa":{"t":null,"r":5325},"loveseat":{"t":null,"r":5100},"l_r":{"t":null,"r":5775},"l_l":{"t":null,"r":5775},"u":{"t":null,"r":10350}},"Nash":{"sofa":{"t":null,"r":6975},"loveseat":{"t":null,"r":6750}},"Parker":{"sofa":{"t":null,"r":6150},"l_r":{"t":null,"r":6900},"l_l":{"t":null,"r":6900},"u":{"t":null,"r":12300}},"Steve":{"sofa":{"t":null,"r":6000},"loveseat":{"t":null,"r":5700},"l_r":{"t":null,"r":6900},"l_l":{"t":null,"r":6900},"u":{"t":null,"r":12450}},"Tali":{"sofa":{"t":null,"r":5325},"loveseat":{"t":null,"r":5175},"l_r":{"t":null,"r":6075},"l_l":{"t":null,"r":6075},"u":{"t":null,"r":10575}}};
 var _MXP_LINES=Object.keys(AL_MATRIX_PRICES).sort(function(a,b){return b.length-a.length;});
 function _priceLineKey(model){ var m=(model||"").toLowerCase().trim(); for(var i=0;i<_MXP_LINES.length;i++){ var L=_MXP_LINES[i].toLowerCase(); if(m===L||m.indexOf(L+" ")===0) return _MXP_LINES[i]; } return null; }
 function _layoutPrice(sp,key){ var lk=_priceLineKey(_lineName(sp))||_priceLineKey(sp.model); if(!lk)return null; var e=AL_MATRIX_PRICES[lk]; return (e&&e[key])||null; }
@@ -1941,6 +1941,7 @@ const MENUGROUPS=["All","Seating","Tables","Storage","Rugs","Lighting","Beds","D
 function _pthumb(p){ var a=archetypeFor(p); if(!a) return glyphSVG(p.gk,p.category,p.model,p.wIn); var hex=(p.finishes&&p.finishes[0]&&p.finishes[0].hex)||a.col; return '<div class="arch" style="--s:url(/arch/'+a.name+'.png);--ac:'+hex+'"></div>'; }
  function pickerList(){ const el=$("#plist"); if(!el)return;
  let list=CATALOG.filter(p=>!p.hidden&&(pickGroup==="All"||p.grp===pickGroup)&&(pickVendor==="All"||p.vendor===pickVendor)&&(!pickQ||(p.model+" "+p.vendor).toLowerCase().includes(pickQ))).slice(0,1200);
+ try{if(window.TRIG_PRICING_V2&&window.trigNetWarm)window.trigNetWarm(list);}catch(e){}
  el.innerHTML=list.map(p=>'<div class="pcard" data-id="'+p.id+'"><div class="pg">'+_pthumb(p)+((p.photos&&p.photos.length)?'<img class="pgi" loading="lazy" src="'+p.photos[0]+'" alt="" onerror="this.remove()"/>':'')+'</div><div class="pm"><b>'+esc(p.model)+(p.cfg?'<span class="badge">configurable</span>':'')+'</b><span>'+esc(p.vendor||p.category)+'</span>'+swatchDots(p)+priceRow(p)+((p.foundIn&&p.foundIn.length)?'<span class="foundin">Found in '+esc(p.foundIn[0])+'</span>':'')+'</div><div class="pp">'+(p.price?money(p.price):'')+'</div></div>').join("")||'<div style="color:#86868b;font-size:13px;padding:8px">No matches.</div>';
  el.querySelectorAll(".pcard").forEach(c=>c.onclick=()=>{ _pickScroll=(sheetBody?sheetBody.scrollTop:0); const p=byId(c.dataset.id); if(p.cfg) openConfigurator(p); else showProductDetail(p); }); }
 let catGroup="All";
@@ -1956,6 +1957,7 @@ function renderCatalogue(){
   var q=(($("#catSearch")&&$("#catSearch").value)||"").toLowerCase().trim();
   var v=($("#catVendor")&&$("#catVendor").value)||"All";
   var list=CATALOG.filter(function(p){return !p.hidden && (catGroup==="All"||p.grp===catGroup) && (v==="All"||p.vendor===v) && (!q||(p.model+" "+(p.vendor||"")).toLowerCase().indexOf(q)>=0) && (!window._favOnly||(window.trigFav&&window.trigFav.has(p.id)));});
+  try{if(window.TRIG_PRICING_V2&&window.trigNetWarm)window.trigNetWarm(list);}catch(e){}
   var cc=$("#catCount"); if(cc)cc.textContent=list.length+" piece"+(list.length===1?"":"s");
   grid.innerHTML=list.map(function(p){var _hb=window._designerMode?('<button class="cheart'+((window.trigFav&&window.trigFav.has(p.id))?' on':'')+'" data-fav="'+p.id+'" aria-label="Save">♥</button>'):''; return '<div class="ccard" data-id="'+p.id+'"><div class="cimg">'+_catImg(p)+_hb+'</div><div class="cmeta"><b>'+esc(p.model)+'</b><span class="cv">'+esc(p.vendor||p.category||"")+'</span>'+swatchDots(p)+priceRow(p)+'</div></div>';}).join("") || '<div class="catempty">No pieces match that.</div>';
   grid.querySelectorAll(".ccard").forEach(function(el){ el.onclick=function(){ var p=byId(el.dataset.id); if(p)openDetail(p); }; });
@@ -2484,6 +2486,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function initials(nm){ return (nm||"?").split(/\s+/).map(function(w){return w[0]||"";}).slice(0,2).join("").toUpperCase(); }
   function lastRoomFor(cid){ var rs=DATA.rooms.filter(function(r){return r.client_id===cid;}); if(!rs.length)return null; return rs.reduce(function(a,b){return (a.updated_at>b.updated_at)?a:b;}); }
   function loadTrade(){
+    if(window.TRIG_PRICING_V2){ TRADE={mode:"v2",map:{}}; return Promise.resolve(); }
     return sb.from("brand_discounts").select("vendor,pct").then(function(r){
       if(!r.error && r.data && r.data.length){ TRADE={mode:"brand",map:{}}; r.data.forEach(function(x){ TRADE.map[(x.vendor||"").toLowerCase()]=Number(x.pct); }); return; }
       return sb.from("trade_prices").select("app_id,net").then(function(r2){ if(!r2.error && r2.data && r2.data.length){ TRADE={mode:"sku",map:{}}; r2.data.forEach(function(x){ TRADE.map[x.app_id]=Number(x.net); }); } }).catch(function(){});
@@ -2587,10 +2590,11 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       var list=(window.CATALOG||[]);
       if(q) list=list.filter(function(p){ return (((p.model||"")+" "+(p.vendor||"")+" "+(p.category||"")).toLowerCase()).indexOf(q)>=0; });
       var total=list.length; list=list.slice(0,60);
+      try{if(window.TRIG_PRICING_V2&&window.trigNetWarm)window.trigNetWarm(list);}catch(e){}
       el("ptCatCount").innerHTML=total+" product"+(total===1?"":"s")+(total>60?" · showing 60":"")+(TRADE?' · <span class="pt-tradeon">Trade pricing</span>':' · <span class="pt-dim">trade pricing pending</span>');
       el("ptCatGrid").innerHTML=list.map(function(p){
         var img=(p.photos&&p.photos[0])||"";
-        var tp=tradePrice(p);
+        var tp=(window.TRIG_PRICING_V2&&window.trigTradePrice)?window.trigTradePrice(p):tradePrice(p);
         var priceHtml = tp!=null ? '<span class="pt-trade">$'+Number(tp).toLocaleString()+'</span> <span class="pt-rrp">$'+Number(p.price).toLocaleString()+'</span>' : (p.price?'$'+Number(p.price).toLocaleString():'');
         return '<div class="pt-cc" data-add="'+esc(p.id)+'"><div class="pt-cc-img">'
           +(img?'<img src="'+esc(img)+'" loading="lazy" alt=""/>':'<span class="pt-cc-noimg">'+esc((p.model||"?").slice(0,1))+'</span>')
@@ -2598,7 +2602,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       }).join("")||'<div class="pt-empty"><p>No matches.</p></div>';
       bindActs("ptCatGrid","add",function(id){ addPieceToRoom(id); });
     }
-    inp.oninput=draw; draw();
+    window._ptCatRedraw=draw; inp.oninput=draw; draw();
   }
 
   function nextStagger(items){ var n=(items||[]).length; return { x:1.5+(n%3)*2.2, y:1.5+Math.floor(n/3)*2.2 }; }
@@ -3109,6 +3113,100 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 })();
 </script>
 <script>
+/* === TRIG-PRICING-V2-CUTOVER (Architect 2026-06-26) === */
+window.TRIG_PRICING_V2 = true;
+/* ============================================================================
+ * Trig Studio — config-aware trade-price resolver (v2)   ·  Architect 2026-06-24
+ * DORMANT until you set  window.TRIG_PRICING_V2 = true  (do that only once
+ * trade_prices_cfg has real coverage — otherwise every trade price reads
+ * "Confirm with Trig", which is the safe gate but blanks current numbers).
+ *
+ * When active: trade prices come ONLY from server-verified nets for the EXACT
+ * configuration. No verified row -> trigTradePrice() returns null -> the
+ * existing priceLabel() already renders "Trade — confirm with Trig". A guessed
+ * number is never shown. The browser never holds the margin table; it asks
+ * get_net_price() one config at a time (batched).
+ *
+ * Paste as a script block AFTER the portal + analytics blocks.
+ * ==========================================================================*/
+(function(){
+  "use strict";
+  if(typeof window.TRIG_PRICING_V2 === "undefined") window.TRIG_PRICING_V2 = false;
+
+  var SUPA_URL="https://xyfogedlowneaevmjkci.supabase.co";
+  var SUPA_KEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu";
+  var _sb=null, _cache={}, _pending={};   // _cache[key] = net|null (null = verified-absent)
+
+  function sb(){ try{ if(!_sb && window.supabase) _sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);}catch(e){} return _sb; }
+
+  // ---- config_key derivation — MUST match PRICING_CONFIG_KEY_CONTRACT.md ----
+  function normalize(v){ return String(v==null?"":v).trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,""); }
+  // sel = {grade:'Leather C', shape:'U', ...}  ->  "grade:leather_c|shape:u"
+  window.trigConfigKey = function(sel){
+    if(!sel || typeof sel!=="object") return "";
+    var parts=[];
+    Object.keys(sel).forEach(function(axis){
+      var val=sel[axis]; if(val==null||val==="") return;
+      parts.push(normalize(axis)+":"+normalize(val));
+    });
+    return parts.sort().join("|");
+  };
+  // pull the price-affecting selection off a product/placed-piece (best-effort;
+  // extend when the configurator is wired). Returns a config_key string.
+  function keyFor(p){
+    if(!p) return "";
+    if(typeof p._cfgKey==="string") return p._cfgKey;          // pre-set by caller
+    if(p.config && typeof p.config==="object") return window.trigConfigKey(p.config);
+    // placed/configured piece: derive from string config (sectional shape) + chosen grade
+    var sel={};
+    if(typeof p.config==="string" && p.config) sel.shape=p.config;   // "l_r" -> shape:l_r
+    if(p.coverGrade) sel.grade=p.coverGrade;                          // "Leather G" -> grade:leather_g
+    if(Object.keys(sel).length) return window.trigConfigKey(sel);
+    return "";                                                  // base / as-sold
+  }
+  function ck(app_id,key){ return app_id+"|"+(key||""); }
+
+  // ---- batch warm: fetch verified nets for a list of products ----
+  window.trigNetWarm = function(products, onDone){
+    if(!window.TRIG_PRICING_V2){ if(onDone)onDone(); return; }
+    var c=sb(); if(!c){ if(onDone)onDone(); return; }
+    var items=[], seen={};
+    (products||[]).forEach(function(p){
+      if(!p||p.id==null) return; var k=keyFor(p), id=String(p.id), cc=ck(id,k);
+      if(cc in _cache || _pending[cc]) return; _pending[cc]=1; seen[cc]=1;
+      items.push({app_id:id, config_key:k});
+    });
+    if(!items.length){ if(onDone)onDone(); return; }
+    c.rpc("get_net_prices",{_items:items}).then(function(r){
+      (r.data||[]).forEach(function(row){ var cc=ck(String(row.app_id),row.config_key||"");
+        _cache[cc]=(row.net==null?null:Number(row.net)); delete _pending[cc]; });
+      // mark anything we asked for but didn't get back as verified-absent
+      Object.keys(seen).forEach(function(cc){ if(!(cc in _cache)) _cache[cc]=null; delete _pending[cc]; });
+      try{ if(window.pickerList)pickerList(); if(window.renderInspector)renderInspector();
+           if(window.renderCatalogue&&window._catOpen)renderCatalogue();
+           if(window._ptCatRedraw)window._ptCatRedraw(); }catch(e){}
+      if(onDone)onDone();
+    }, function(){ Object.keys(seen).forEach(function(cc){ delete _pending[cc]; }); if(onDone)onDone(); });
+  };
+
+  // ---- the gate: override trade-price resolution to verified-only ----
+  if(window.TRIG_PRICING_V2){
+    window.trigTradePrice = function(p){
+      if(!p||p.id==null) return null;
+      var cc=ck(String(p.id), keyFor(p));
+      if(cc in _cache) return _cache[cc];     // number = verified, null = confirm-with-Trig
+      // not warmed yet: trigger a fetch, return null for now (renders "confirm" until it lands)
+      window.trigNetWarm([p]);
+      return null;
+    };
+  }
+
+  window.trigPricingInfo = function(){ return { active:!!window.TRIG_PRICING_V2,
+    cached:Object.keys(_cache).length, pending:Object.keys(_pending).length }; };
+})();
+</script>
+<script>
 /* === TRIG-QUOTE-V1 (Architect) === */
 /* TRIG-QUOTE-V1 — room-less quote builder + back-to-dashboard (Architect 2026-06-25)
  * A quote is modeled as a HIDDEN-CANVAS room: state.room is a nominal {quoteOnly:true} room so the
@@ -3122,7 +3220,6 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
  * openPortal, openSheet. localStorage only for v1 (Supabase-sync of quotes = follow-up). */
 (function(){
   "use strict";
-  var KEY="trig_quote_v1";
   function el(id){ return document.getElementById(id); }
   function W(n){ return window[n]; }
   function money(n){ return (n==null)?null:"$"+(Math.round(n/5)*5).toLocaleString(); }
@@ -3133,11 +3230,42 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   // the app declares `state` as a lexical (let) global — NOT on window — so reference it directly
   function ST(){ try{ return state; }catch(e){ return null; } }
 
-  /* ---------- persistence ---------- */
-  var meta={name:"",client:"",notes:{}};
+  /* ---------- persistence (Supabase: quotes table, synced + feeds dashboard) ---------- */
+  var meta={name:"",clientId:null,clientName:"",notes:{}};
+  var QURL="https://xyfogedlowneaevmjkci.supabase.co", QKEY="sb_publishable_ae3zGuAafiURw0AsjwXkvQ_amrQDJUu", QSB=null;
+  function qsb(){ try{ if(!QSB && window.supabase) QSB=window.supabase.createClient(QURL,QKEY); }catch(e){} return QSB; }
+  var activeQ=null;            // active Supabase quote row {id, client_id, name, ...}
+  var clientsCache=null;       // [{id,name}]
   function isQuoteRoom(){ var s=ST(); return !!(s && s.room && s.room.quoteOnly); }
-  function saveQuote(){ if(!isQuoteRoom())return; var s=ST(); try{ localStorage.setItem(KEY, JSON.stringify({pieces:(s&&s.pieces)||[], name:meta.name, client:meta.client, notes:meta.notes})); }catch(e){} }
-  function loadQuote(){ var d={pieces:[],name:"",client:"",notes:{}}; try{ var raw=localStorage.getItem(KEY); if(raw) d=JSON.parse(raw)||d; }catch(e){} meta.name=d.name||""; meta.client=d.client||""; meta.notes=d.notes||{}; return d; }
+  var _pT=null;
+  // Strip dealer-net/margin from persisted items (Checker contract: net resolves LIVE, never stored).
+  function sanitizeItems(pieces){ return (pieces||[]).map(function(pc){
+    var o=JSON.parse(JSON.stringify(pc));
+    if(o.spec){ delete o.spec.trade_price; delete o.spec.net; delete o.spec.netPrice; delete o.spec.cost; }
+    return o;
+  }); }
+  function saveQuote(){ // debounced persist of the active quote to Supabase
+    if(!activeQ || !activeQ.id) return; var s=ST(); clearTimeout(_pT);
+    _pT=setTimeout(function(){ var c=qsb(); if(!c)return;
+      c.from("quotes").update({ items:sanitizeItems(s&&s.pieces), notes:meta.notes||{}, name:meta.name||null, client_id:meta.clientId||null }).eq("id",activeQ.id).then(function(){},function(){});
+    },500);
+  }
+  function loadClients(cb){ if(clientsCache) return cb(clientsCache); var c=qsb(); if(!c) return cb([]); c.from("clients").select("id,name").order("name").then(function(r){ clientsCache=(r&&r.data)||[]; cb(clientsCache); },function(){ clientsCache=[]; cb(clientsCache); }); }
+  function clientNameOf(id){ if(!id||!clientsCache) return ""; var x=clientsCache.find(function(c){return c.id===id;}); return x?x.name:""; }
+  function listQuotes(cb){ var c=qsb(); if(!c) return cb([]); c.from("quotes").select("id,name,client_id,items,notes,updated_at").order("updated_at",{ascending:false}).then(function(r){ cb((r&&r.data)||[]); },function(){ cb([]); }); }
+  function openQuoteRow(q){ activeQ=q;
+    if(!ST())return;
+    state.editVig=null; state.activeId=null; state.sel=null;
+    state.room={type:"Quote",size:"quote",w:60,d:60,shape:null,floor:"oak",quoteOnly:true};
+    state.pieces=Array.isArray(q.items)?q.items:[]; meta.name=q.name||""; meta.clientId=q.client_id||null; meta.notes=q.notes||{};
+    loadClients(function(){ meta.clientName=clientNameOf(meta.clientId);
+      ["catalogue","catdetail","portal","home","maphome","vigpage"].forEach(function(id){var x=el(id);if(x)x.classList.add("gone");});
+      try{ if(window.enter) enter("design"); }catch(e){} try{ if(window.setTab) setTab("design"); }catch(e){}
+      var b=el("bar"); if(b) b.style.display="flex"; ensurePanel(); document.body.classList.add("quote-mode");
+      try{ if(window.render) window.render(); }catch(e){} renderPanel();
+    });
+  }
+  function deleteQuoteRow(id,cb){ var c=qsb(); if(!c) return cb&&cb(); c.from("quotes").delete().eq("id",id).then(function(){cb&&cb();},function(){cb&&cb();}); }
   function cap(x){ x=String(x||""); return x.charAt(0).toUpperCase()+x.slice(1); }
   function shapeLabel(c){ var m={sofa:"Sofa",loveseat:"Loveseat",l_l:"L · chaise left",l_r:"L · chaise right",u:"U-sectional"}; return m[c]||cap(String(c).replace(/_/g," ")); }
   // manufacturer order SKU: spec.sku (cfg) -> spec.order_sku -> live catalog lookup by id (feed field is order_sku, NOT sku)
@@ -3257,20 +3385,22 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     var isQ=isQuoteRoom();
     p.innerHTML='<div class="qp-wrap">'
       +'<div class="qp-head"><h2>'+(isQ?'Quote':'Room cart')+'</h2><span class="qp-sub">'+n+' item'+(n===1?'':'s')+'</span></div>'
-      +(isQ?'<div class="qp-fields"><input id="qpName" placeholder="Quote name (optional)" value="'+esc(meta.name)+'"><input id="qpClient" placeholder="Client name (optional)" value="'+esc(meta.client)+'"></div>':'')
+      +(isQ?('<div class="qp-fields"><input id="qpName" placeholder="Quote name (e.g. Living Room)" value="'+esc(meta.name)+'">'
+        +'<select id="qpClientSel"><option value="">— No client —</option>'+(clientsCache||[]).map(function(c){return '<option value="'+esc(c.id)+'"'+(meta.clientId===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join("")+'</select>'
+        +'<button class="qp-btn" id="qpSwitch">⌄ My quotes</button></div>'):'')
       +tableOrEmpty
       +'<div class="qp-foot"><div class="qp-tot">Retail total <b>'+money(retailTot)+'</b>'+(showTrade?(' &nbsp;·&nbsp; <span class="qp-trade">Trade '+money(tradeTot)+'</span>'):'')+'</div>'
       +'<div class="qp-actions"><button class="qp-btn" id="qpAdd">+ Add items</button>'
-      +'<button class="qp-btn" id="qpClient"'+(rs.length?'':' disabled')+'>Client PDF</button>'
+      +'<button class="qp-btn" id="qpClientPdf"'+(rs.length?'':' disabled')+'>Client PDF</button>'
       +'<button class="qp-btn" id="qpOrder"'+(rs.length?'':' disabled')+'>Order sheet</button>'
       +'<button class="qp-btn tint" id="qpEmail"'+(rs.length?'':' disabled')+'>Email to Trig</button>'
       +'<button class="qp-btn" id="qpClear"'+(rs.length?'':' disabled')+'>Clear</button></div></div>'
       +'</div>';
 
     // field persistence
-    var nm=el("qpName"), cl=el("qpClient");
-    if(nm) nm.oninput=function(){ meta.name=nm.value; saveQuote(); };
-    if(cl) cl.oninput=function(){ meta.client=cl.value; saveQuote(); };
+    var nm=el("qpName"); if(nm) nm.oninput=function(){ meta.name=nm.value; saveQuote(); };
+    var sel=el("qpClientSel"); if(sel) sel.onchange=function(){ meta.clientId=sel.value||null; meta.clientName=clientNameOf(meta.clientId); saveQuote(); };
+    var sw=el("qpSwitch"); if(sw) sw.onclick=showQuoteSwitcher;
     // row actions
     p.querySelectorAll("tr[data-k]").forEach(function(tr){
       var k=tr.getAttribute("data-k");
@@ -3281,7 +3411,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     });
     var add0=el("qpAdd0"); if(add0) add0.onclick=addItems;
     var add=el("qpAdd"); if(add) add.onclick=addItems;
-    var bc=el("qpClient"); if(bc) bc.onclick=function(){ buildSheet("client"); };
+    var bc=el("qpClientPdf"); if(bc) bc.onclick=function(){ buildSheet("client"); };
     var bo=el("qpOrder"); if(bo) bo.onclick=function(){ buildSheet("order"); };
     var em=el("qpEmail"); if(em) em.onclick=emailQuote;
     var cls=el("qpClear"); if(cls) cls.onclick=clearQuote;
@@ -3293,7 +3423,72 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
 
   /* ---------- actions ---------- */
   function piecesOf(k){ var s=ST(); return ((s&&s.pieces)||[]).filter(function(pc){ return pkey(pc.spec)===k; }); }
-  function addItems(){ try{ if(window.openSheet) openSheet(); else if(el("addBtn")) el("addBtn").click(); }catch(e){} }
+  function addItems(){ openCatalogForQuote(); }
+  /* ---------- catalogue-first build (Build a quote -> designer catalogue -> one-click add) ---------- */
+  function wrapSave(){
+    if(window._qWrapped || !window.trigSaveToRoom) return;
+    var orig=window.trigSaveToRoom; window._qOrigSave=orig;
+    window.trigSaveToRoom=function(p){ if(window._quoteBuild){ quoteAddProduct(p); } else { try{ orig(p); }catch(e){} } };
+    window._qWrapped=true;
+  }
+  function quoteAddProduct(p){ try{
+    var prod=(window.CATALOG||[]).find(function(x){return x.id===(p&&p.id);})||p; if(!prod)return;
+    var spec={id:prod.id,model:prod.model,modelLabel:prod.model,vendor:prod.vendor||prod.brand,category:prod.category,price:(prod.price!=null?prod.price:prod.msrp),wIn:prod.wIn,dIn:prod.dIn,heightIn:prod.heightIn,order_sku:prod.order_sku};
+    if(!ST())return; if(!state.pieces)state.pieces=[];
+    state.pieces.push({id:'q'+Date.now().toString(36)+Math.floor(Math.random()*900+100),kind:'prop',spec:spec,x:1,y:1,rot:0});
+    saveQuote(); updateViewBtn();
+    try{ if(window.toast) toast("Added — "+(prod.model||"piece")); }catch(e){}
+  }catch(e){} }
+  function openCatalogForQuote(){
+    wrapSave(); window._quoteBuild=true;
+    document.body.classList.remove("quote-mode");   // show the catalogue overlay; hide the review panel
+    try{ if(window.trigOpenDesignerCatalog) trigOpenDesignerCatalog();
+         else if(window.openCatalogue){ var c=el("catalogue"); if(c)c.classList.remove("gone"); openCatalogue(); } }catch(e){}
+    setTimeout(addViewQuoteBtn,80); setTimeout(addViewQuoteBtn,450);
+  }
+  function viewBtnCSS(){ if(el("qViewCSS"))return; var s=document.createElement("style"); s.id="qViewCSS";
+    s.textContent="#qViewBtn{margin-left:10px;padding:9px 16px;border:0;border-radius:980px;background:var(--accent,#e2562a);color:#fff;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;}#qViewBtn:hover{filter:brightness(.94);}";
+    document.head.appendChild(s); }
+  function addViewQuoteBtn(){ viewBtnCSS(); var cb=el("catbar"); if(!cb)return; var b=el("qViewBtn");
+    if(!b){ b=document.createElement("button"); b.id="qViewBtn"; b.onclick=exitToReview; cb.appendChild(b); } updateViewBtn(); }
+  function updateViewBtn(){ var b=el("qViewBtn"); if(!b)return; var n=(ST()&&state.pieces?state.pieces.length:0); b.textContent="Review quote · "+n; b.style.display=window._quoteBuild?"":"none"; }
+  function exitToReview(){
+    window._quoteBuild=false; window._designerMode=0;
+    try{ if(window._prevPriceView && window.setPriceView) setPriceView(window._prevPriceView); }catch(e){}
+    ["catalogue","catdetail"].forEach(function(id){ var x=el(id); if(x) x.classList.add("gone"); });
+    try{ if(window.enter) enter("design"); }catch(e){}
+    var bar=el("bar"); if(bar) bar.style.display="flex";
+    ensurePanel(); document.body.classList.add("quote-mode"); renderPanel();
+  }
+  function qswCSS(){ if(el("qswCSS"))return; var s=document.createElement("style"); s.id="qswCSS";
+    s.textContent=["#qswOverlay{display:none;position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.32);align-items:flex-start;justify-content:center;}",
+      ".qsw-card{background:#fff;border-radius:16px;max-width:460px;width:92%;margin-top:80px;padding:20px;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);}",
+      ".qsw-head{font-size:17px;font-weight:700;margin-bottom:12px;}",
+      ".qsw-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}",
+      ".qsw-row{display:flex;align-items:stretch;gap:8px;}",
+      ".qsw-open{flex:1;text-align:left;border:1px solid var(--hair,#e8e8ed);border-radius:11px;background:#fff;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;}",
+      ".qsw-open:hover{border-color:var(--line,#d2d2d7);}",
+      ".qsw-open b{font-size:14px;} .qsw-open span{font-size:12px;color:var(--muted,#86868b);}",
+      ".qsw-del{border:1px solid var(--hair,#e8e8ed);border-radius:11px;background:#fff;color:#b00;cursor:pointer;padding:0 12px;font-size:14px;}",
+      ".qsw-empty{color:var(--muted,#86868b);font-size:13px;padding:14px 0;}"].join("\n");
+    document.head.appendChild(s); }
+  function showQuoteSwitcher(){
+    qswCSS();
+    var ov=el("qswOverlay"); if(!ov){ ov=document.createElement("div"); ov.id="qswOverlay"; document.body.appendChild(ov); ov.onclick=function(e){ if(e.target===ov) ov.style.display="none"; }; }
+    ov.style.display="flex"; ov.innerHTML='<div class="qsw-card"><div class="qsw-head">My quotes</div><div class="qsw-sub" style="color:#86868b;font-size:13px">Loading…</div></div>';
+    listQuotes(function(qs){ loadClients(function(){
+      var rows=qs.map(function(q){ var cn=clientNameOf(q.client_id); var n=(q.items||[]).length;
+        return '<div class="qsw-row"><button class="qsw-open" data-id="'+esc(q.id)+'"><b>'+esc(q.name||"Untitled quote")+'</b><span>'+(cn?esc(cn)+" · ":"")+n+' item'+(n===1?'':'s')+'</span></button><button class="qsw-del" data-del="'+esc(q.id)+'" title="Delete">✕</button></div>'; }).join("");
+      var c=el("qswOverlay").querySelector(".qsw-card");
+      c.innerHTML='<div class="qsw-head">My quotes</div><button class="qp-btn pri" id="qswNew" style="width:100%">+ New quote</button>'
+        +'<div class="qsw-list">'+(rows||'<div class="qsw-empty">No quotes yet — start one.</div>')+'</div>'
+        +'<button class="qp-btn" id="qswClose" style="margin-top:14px;width:100%">Close</button>';
+      el("qswClose").onclick=function(){ el("qswOverlay").style.display="none"; };
+      el("qswNew").onclick=function(){ el("qswOverlay").style.display="none"; startBlankQuote(); };
+      Array.prototype.forEach.call(c.querySelectorAll(".qsw-open"),function(b){ b.onclick=function(){ var id=b.getAttribute("data-id"); var q=qs.filter(function(x){return x.id===id;})[0]; el("qswOverlay").style.display="none"; if(q) openQuoteRow(q); }; });
+      Array.prototype.forEach.call(c.querySelectorAll(".qsw-del"),function(b){ b.onclick=function(){ var id=b.getAttribute("data-del"); if(!confirm("Delete this quote?"))return; deleteQuoteRow(id,function(){ showQuoteSwitcher(); }); }; });
+    }); });
+  }
   function qtyPlus(k){ var ps=piecesOf(k); if(!ps.length)return; var rep=ps[0];
     var spec=JSON.parse(JSON.stringify(rep.spec));
     try{ if(window.requestAdd){ window.requestAdd({kind:rep.kind||"prop",spec:spec}); } }catch(e){} }
@@ -3304,14 +3499,17 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function redraw(){ try{ if(window.render) window.render(); }catch(e){} renderPanel(); saveQuote(); }
 
   /* ---------- launch / leave ---------- */
-  // Dashboard launcher: a fresh ROOM-LESS quote (saved separately in localStorage).
+  // Dashboard launcher: a fresh Supabase quote, then catalogue-first build.
   function startBlankQuote(){
     if(!ST()){ return; }
-    var d=loadQuote();
     state.editVig=null; state.activeId=null; state.sel=null;
     state.room={type:"Quote",size:"quote",w:60,d:60,shape:null,floor:"oak",quoteOnly:true};
-    state.pieces=Array.isArray(d.pieces)?d.pieces:[];
-    // close any overlay we might be launching from (portal / map / home) so design isn't hidden behind it
+    state.pieces=[]; meta.name=""; meta.clientId=null; meta.clientName=""; meta.notes={};
+    activeQ=null;
+    var c=qsb();
+    if(c){ c.from("quotes").insert({name:null,items:[],notes:{},status:"draft"}).select().single()
+      .then(function(r){ if(!r.error && r.data){ activeQ=r.data; saveQuote(); } },function(){}); }
+    loadClients(function(){});
     ["portal","maphome","home","catalogue","catdetail","vigpage"].forEach(function(id){ var x=el(id); if(x) x.classList.add("gone"); });
     try{ if(window.enter) enter("design"); }catch(e){}
     try{ if(window.setTab) setTab("design"); }catch(e){}
@@ -3320,15 +3518,15 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     document.body.classList.add("quote-mode");
     addButtons();
     try{ if(window.render) window.render(); }catch(e){}
-    renderPanel();
-    try{ if(window.trigLog) trigLog("quote_open",{meta:{items:state.pieces.length}}); }catch(e){}
+    openCatalogForQuote();   // catalogue-first: land in the catalogue and build from there
+    try{ if(window.trigLog) trigLog("quote_open",{}); }catch(e){}
   }
   // In-room toolbar button: toggle a line-item CART of the CURRENT room (no state replacement).
   function toggleQuoteView(){
     if(!ST()){ return; }
     if(!state.room){ startBlankQuote(); return; }      // no room -> behave like a blank quote
     if(inQuote()){ document.body.classList.remove("quote-mode"); try{ if(window.render) window.render(); }catch(e){} return; }
-    if(!isQuoteRoom()){ meta.name=""; meta.client=""; } // room cart: don't inherit a prior quote's name
+    if(!isQuoteRoom()){ meta.name=""; meta.clientId=null; meta.clientName=""; } // room cart: don't inherit a prior quote's name
     ensurePanel();
     document.body.classList.add("quote-mode");
     renderPanel();
@@ -3382,7 +3580,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
       +'tfoot td{border-top:2px solid #1c1a18;border-bottom:0;font-weight:700;font-size:15px;padding-top:12px}.trade{color:#e0512f}'
       +'.note{margin-top:22px;font-size:11px;color:#999}@media print{body{padding:0}}</style></head><body>'
       +'<div class="hd"><div class="wm">Trig <b>Modern</b></div><div style="text-align:right"><div class="ttl">'+ttl+'</div><div style="font-size:12px;color:#777">'+esc(date)+'</div></div></div>'
-      +'<div class="meta">'+(meta.name?'<div>Quote<b>'+esc(meta.name)+'</b></div>':'')+(meta.client?'<div>Client<b>'+esc(meta.client)+'</b></div>':'')+(order?'<div>Type<b>Internal order worksheet</b></div>':'')+'<div>Prepared by<b>Trig Modern · Raleigh, NC</b></div></div>'
+      +'<div class="meta">'+(meta.name?'<div>Quote<b>'+esc(meta.name)+'</b></div>':'')+(meta.clientName?'<div>Client<b>'+esc(meta.clientName)+'</b></div>':'')+(order?'<div>Type<b>Internal order worksheet</b></div>':'')+'<div>Prepared by<b>Trig Modern · Raleigh, NC</b></div></div>'
       +'<table>'+head+'<tbody>'+body+'</tbody>'+foot+'</table>'
       +'<div class="note">'+(order?'INTERNAL — includes net + manufacturer SKU + configuration for ordering. Not for the client. ':'')+'Pricing reflects verified Trig figures where available; items marked “Confirm” are configured by quote. Freight, COM, and lead times confirmed at order. Estimate only — not a final invoice.</div>'
       +'<script>window.onload=function(){setTimeout(function(){window.print();},250);}<\/script></body></html>';
@@ -3393,8 +3591,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     var lines=rs.map(function(it){ var s=it.s, price=s.price||0; var cover=s.coverGrade?(' ['+s.coverGrade+']'):'';
       return it.qty+'× '+(s.modelLabel||s.model||'Item')+cover+' — '+(price?money(price*it.qty):'confirm'); });
     var tot=rs.reduce(function(a,it){return a+((it.s.price||0)*it.qty);},0);
-    var subj="Trig quote"+(meta.client?(" — "+meta.client):"");
-    var bodyTxt=(meta.client?("Client: "+meta.client+"\n"):"")+(meta.name?("Quote: "+meta.name+"\n"):"")+"\n"+lines.join("\n")+"\n\nRetail total: "+money(tot)+"\n\n(Generated in Trig Studio)";
+    var subj="Trig quote"+(meta.clientName?(" — "+meta.clientName):"");
+    var bodyTxt=(meta.clientName?("Client: "+meta.clientName+"\n"):"")+(meta.name?("Quote: "+meta.name+"\n"):"")+"\n"+lines.join("\n")+"\n\nRetail total: "+money(tot)+"\n\n(Generated in Trig Studio)";
     var href="mailto:orders@trigmodern.com?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(bodyTxt);
     try{ window.location.href=href; }catch(e){}
   }
@@ -3417,52 +3615,8 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     }
   }
 
-  function init(){ injectCSS(); addButtons(); }
+  function init(){ injectCSS(); addButtons(); wrapSave(); }
   var t=0; (function tick(){ try{ init(); }catch(e){} if(++t<25) setTimeout(tick,400); })();
-})();
-</script>
-<script>
-/* === TRIG-UX-EXITS-V1 (Architect) === */
-/* TRIG-UX-EXITS-V1 — guaranteed exits / no dead ends (Architect 2026-06-25)
- * Research: every screen needs a clear way out; Esc + visible close are table stakes. We kept
- * shipping trap states (room with no exit, overlay with no X). This adds ONE global Escape handler
- * that closes the TOPMOST open surface, reusing the app's own close functions. Also ensures the
- * configurator/picker sheet always shows its X (the desktop dock CSS had hidden it). Purely
- * additive — no existing behavior changes except gaining an exit. */
-(function(){
-  "use strict";
-  function el(id){ return document.getElementById(id); }
-  function shown(id){ var x=el(id); return x && !x.classList.contains("gone"); }
-  function onCls(id){ var x=el(id); return x && x.classList.contains("on"); }
-  function click(id){ var x=el(id); if(x){ x.click(); return true; } return false; }
-
-  function closeTopmost(){
-    // precedence: most-modal / most-recently-opened first
-    if(onCls("sendModal")){ try{ if(window.closeSend) return closeSend(),true; }catch(e){} return click("smX"); }
-    if(onCls("sheet")){ try{ if(window.closeSheet) return closeSheet(),true; }catch(e){} return true; }
-    if(shown("catdetail")){ return click("cdBack"); }
-    if(shown("catalogue")){ return click("catBack"); }
-    if(document.body.classList.contains("quote-mode")){ try{ if(window.trigToggleQuote) return trigToggleQuote(),true; }catch(e){} }
-    if(shown("portal")){ try{ if(window.closePortal) return closePortal(),true; }catch(e){} }
-    return false;
-  }
-
-  document.addEventListener("keydown", function(e){
-    if(e.key!=="Escape" && e.keyCode!==27) return;
-    // don't hijack Esc while typing in a field (let it blur/clear first)
-    var t=e.target, tag=(t&&t.tagName||"").toLowerCase();
-    if(tag==="input"||tag==="textarea"||tag==="select"||(t&&t.isContentEditable)){ try{ t.blur(); }catch(_){} return; }
-    if(closeTopmost()) e.preventDefault();
-  }, true);
-
-  // make the sheet's close (X) visible even when docked on desktop
-  function css(){
-    if(el("uxExitCSS")) return;
-    var s=document.createElement("style"); s.id="uxExitCSS";
-    s.textContent="body[data-tab=\"design\"].has-room .sheet .x{display:flex!important;align-items:center;justify-content:center;}";
-    document.head.appendChild(s);
-  }
-  css();
 })();
 </script>
 <script>
