@@ -3141,7 +3141,10 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
   function cap(x){ x=String(x||""); return x.charAt(0).toUpperCase()+x.slice(1); }
   function shapeLabel(c){ var m={sofa:"Sofa",loveseat:"Loveseat",l_l:"L · chaise left",l_r:"L · chaise right",u:"U-sectional"}; return m[c]||cap(String(c).replace(/_/g," ")); }
   // manufacturer order SKU: spec.sku (cfg) -> spec.order_sku -> live catalog lookup by id (feed field is order_sku, NOT sku)
-  function skuOf(s){ try{ if(s.sku) return s.sku; if(s.order_sku) return s.order_sku; if(s.id!=null && window.byId){ var p=byId(s.id); if(p && p.order_sku) return p.order_sku; } }catch(e){} return ""; }
+  function skuOf(s){ try{ if(s.sku) return s.sku; if(s.order_sku) return s.order_sku;
+    var id=(s.id!=null)?s.id:s.productId;
+    if(id!=null && window.CATALOG){ for(var i=0;i<window.CATALOG.length;i++){ var p=window.CATALOG[i]; if(p.id===id) return p.order_sku||""; } }
+  }catch(e){} return ""; }
   // human config string for the internal order sheet (shape · grade · cover · arm/base/cushion · orient · size)
   function configStr(s){ var p=[];
     if(s.config) p.push(shapeLabel(s.config));
