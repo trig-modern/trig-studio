@@ -25,6 +25,9 @@
  .seg button{border:0;background:transparent;padding:7px 13px;border-radius:7px;font:inherit;font-size:13px;font-weight:510;color:var(--ink);cursor:pointer;}
  .seg button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.13);}
  .pills{display:flex;flex-wrap:wrap;gap:6px;} .pill{border:1px solid var(--line);background:#fff;border-radius:980px;padding:5px 11px;font-size:12px;cursor:pointer;}
+.pill .pdelta{color:var(--muted);font-size:11px;margin-left:3px;}
+.pill .pbase{color:var(--muted);font-size:10.5px;margin-left:3px;opacity:.7;}
+.pill.on .pdelta,.pill.on .pbase{color:inherit;opacity:.85;}
  .pill.on{background:var(--accent);border-color:var(--accent);color:#fff;}
  .search{margin:10px 0;}
  .grid{display:grid;grid-template-columns:repeat(auto-fill,64px);justify-content:center;gap:10px;max-height:360px;overflow:auto;padding:4px;}
@@ -162,6 +165,7 @@ function _ckey(mat,g){ var parts=["grade:"+_tok(mat,g)]; var sh=_shapeTok(); if(
 function vRow(){ try{ var s=resolve(); var G=state.grade||(state.sw&&state.sw.grade); if(!s||!G)return null;
   if(VTABLE){ var r=VTABLE[_ckey(state.mat,G)]; if(r&&r.retail!=null)return {retail:r.retail,net:(r.net!=null?r.net:null)}; if(!VEMPTY)return null; }
   var k=priceKey(state.mat,G), w=k&&s.w?s.w[k]:null; if(w!=null)return {retail:Math.round((w+upcharge(s.seats||1))*2.5/5)*5, net:w, est:true}; }catch(e){} return null; }
+function gradeRetail(g){ try{ var s=resolve(); if(!s||!g)return null; if(VTABLE){ var r=VTABLE[_ckey(state.mat,g)]; if(r&&r.retail!=null)return r.retail; if(!VEMPTY)return null; } var k=priceKey(state.mat,g), w=k&&s.w?s.w[k]:null; if(w!=null)return Math.round((w+upcharge(s.seats||1))*2.5/5)*5; }catch(e){} return null; }
 function money(n){ return "$"+Math.round(n/5)*5; }
 // ---- build options (estimate adders; final upcharge confirmed by Trig on the AL worksheet) ----
 const IC='<svg viewBox="0 0 56 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
@@ -372,8 +376,11 @@ function render(){
  const gset=(state.mat==="microfiber")?(_wkN.indexOf("Fabric V")>=0?["V"]:[])
    :(function(){var pf=state.mat==="leather"?"Leather ":"Fabric ";return [...new Set(_wkN.filter(k=>k.indexOf(pf)===0).map(k=>k.slice(pf.length)))]
      .sort((a,b)=>(["C","D/F","G","H","J","I","II","III","V"].indexOf(a)-["C","D/F","G","H","J","I","II","III","V"].indexOf(b)));})();
+ var _gr={}; gset.forEach(function(g){ _gr[g]=gradeRetail(g); });
+ var _gvals=gset.map(function(g){return _gr[g];}).filter(function(v){return v!=null;});
+ var _gbase=_gvals.length?Math.min.apply(null,_gvals):null;
  document.getElementById("grades").innerHTML='<span class="pill'+(state.grade===null?" on":"")+'" data-g="">All</span>'+
-   gset.map(g=>'<span class="pill'+(state.grade===g?" on":"")+'" data-g="'+g+'">'+g+'</span>').join("");
+   gset.map(function(g){ var r=_gr[g]; var d=''; if(r!=null&&_gbase!=null){ d=(r>_gbase)?(' <span class="pdelta">+'+money(r-_gbase)+'</span>'):' <span class="pbase">incl.</span>'; } return '<span class="pill'+(state.grade===g?" on":"")+'" data-g="'+g+'">'+g+d+'</span>'; }).join("");
  document.querySelectorAll("#grades .pill").forEach(p=>p.onclick=()=>{ state.grade=p.dataset.g||null; render(); });
  // swatches
  let list=SWATCHES.filter(s=>s.type===state.mat);
@@ -408,7 +415,7 @@ function render(){
    } else { pr.textContent = sku ? (G?"Select a swatch":"Select a grade") : "\u2014"; }
    ready = !!(sku && G && sw && ready);
  }
- btn.disabled=!ready; arb.disabled=!ready;
+ btn.disabled=!ready; arb.disabled=!ready; try{ if(EMBED){ parent.postMessage({type:"trig-cfg-price", priceHTML:document.getElementById("price").innerHTML, ready:!arb.disabled},"*"); } }catch(e){}
 }
 render();
 
