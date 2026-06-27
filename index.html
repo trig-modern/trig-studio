@@ -3675,10 +3675,23 @@ window.TRIG_PRICING_V2 = true;
   function keyOf(sel,axes){ return axes.map(function(a){return a+":"+sel[a];}).filter(function(p){return p.split(":")[1];}).sort().join("|"); }
 
   /* ---------- state ---------- */
-  var P=null, ROWS=[], AXES=[], SHARED=null, SEL={}, OPTSEL={};
+  var P=null, ROWS=[], AXES=[], SHARED=null, SEL={}, OPTSEL={}, CONFIGS=[];
 
   function loadShared(cb){ if(SHARED) return cb(SHARED); var c=sb(); if(!c){return cb(null);}
     c.from("config_shared").select("id,data").then(function(r){ SHARED={}; (r.data||[]).forEach(function(x){SHARED[x.id]=x.data;}); cb(SHARED); },function(){cb(null);}); }
+
+  // load this model's exact AL module configs (each carries its real order SKU + dims) from config_schemas
+  function loadConfigs(model, cb){ CONFIGS=[]; if(!model){ return cb(); } var c=sb(); if(!c){ return cb(); }
+    c.from("config_schemas").select("configs").eq("model",String(model)).then(function(r){
+      var row=(r&&r.data&&r.data[0])||null; CONFIGS=(row&&row.configs)||[];
+      var base=CONFIGS.filter(function(x){return x.sku===P.order_sku;})[0];
+      SEL.cfgSku = base ? base.sku : (P.order_sku||null);   // default to the product's standard module
+      cb();
+    },function(){ cb(); });
+  }
+  function cfgBySku(s){ return CONFIGS.filter(function(x){return x.sku===s;})[0]||null; }
+  function cfgOpts(){ var b=cfgBySku(P.order_sku); if(!b) return []; return CONFIGS.filter(function(x){return x.fam===b.fam;}); }
+  function cfgOptLabel(c){ return String(c.desc||c.sku||"").replace(/\b([A-Z])([A-Z]+)\b/g,function(_,a,b){return a+b.toLowerCase();}); }
 
   function open(p){
     P=p; ROWS=[]; AXES=[]; SEL={}; OPTSEL={};
@@ -3698,7 +3711,7 @@ window.TRIG_PRICING_V2 = true;
         if(ROWS.length){ var d=parseKey(ROWS[0].config_key); AXES.forEach(function(a){ SEL[a]=d[a]; }); }
         // default options
         if(SHARED&&SHARED.OPT_DEF) OPTSEL=Object.assign({},SHARED.OPT_DEF);
-        render();
+        loadConfigs(P.cfg, function(){ render(); });
       },function(){ host.innerHTML='<div class="ncfg-load">Couldn’t load pricing for this piece.</div>'; });
     });
   }
@@ -3750,6 +3763,16 @@ window.TRIG_PRICING_V2 = true;
         vals.map(function(v){ return '<button class="ncfg-chip'+(SEL[a]===v?" on":"")+'" data-ax="'+esc(a)+'" data-v="'+esc(v)+'">'+esc(valLabel(a,v))+'</button>'; }).join("")+
         '</div></div>';
     });
+    // Configuration (exact AL module: orientation/size variants of the chosen piece). Sets the EXACT
+    // order SKU + dims from config_schemas; orientation/size don't change the verified price.
+    var copts=cfgOpts();
+    if(copts.length>1){
+      html+='<div class="ncfg-ax"><label>Configuration</label><div class="ncfg-chips">'+
+        copts.map(function(c){ return '<button class="ncfg-chip'+(SEL.cfgSku===c.sku?" on":"")+'" data-cfg="'+esc(c.sku)+'">'+esc(cfgOptLabel(c))+'</button>'; }).join("")+
+        '</div></div>';
+    }
+    var _curSku=SEL.cfgSku||P.order_sku||null;
+    if(_curSku) html+='<div class="ncfg-swname" style="margin-top:-4px">Order code: <b style="font-family:ui-monospace,Menlo,monospace">'+esc(_curSku)+'</b></div>';
     // swatch picker (color within the selected grade; cosmetic — price unaffected)
     if(SEL.grade){
       var sws=matSwatches(SEL.grade);
@@ -3782,6 +3805,7 @@ window.TRIG_PRICING_V2 = true;
     // wire
     host.querySelectorAll(".ncfg-chip").forEach(function(b){ b.onclick=function(){ if(b.dataset.ax==="grade") SEL.swatchId=null; SEL[b.dataset.ax]=b.dataset.v; render(); }; });
     host.querySelectorAll(".ncfg-swc").forEach(function(b){ b.onclick=function(){ SEL.swatchId=b.dataset.sw; render(); }; });
+    host.querySelectorAll("[data-cfg]").forEach(function(b){ b.onclick=function(){ SEL.cfgSku=b.dataset.cfg; render(); }; });
     host.querySelectorAll("[data-opt]").forEach(function(s){ s.onchange=function(){ OPTSEL[s.dataset.opt]=s.value; }; });
     var add=el("ncfgAdd"); if(add) add.onclick=function(){ addConfigured(row); };
   }
@@ -3790,11 +3814,16 @@ window.TRIG_PRICING_V2 = true;
     if(!row) return;
     var sel=parseKey(row.config_key);
     var sw=swatchById(SEL.swatchId);
+    var cfg=cfgBySku(SEL.cfgSku);                                // exact AL module from config_schemas
+    var exactSku=(cfg?cfg.sku:(SEL.cfgSku||P.order_sku||null));
     var spec={
       id:P.id, model:P.model, modelLabel:P.model, vendor:P.vendor||"American Leather", category:P.category,
       price:(row.retail!=null?Number(row.retail):P.price),       // retail
       trade_price:(row.net!=null?Number(row.net):null),          // designer (retail − %), gated
-      wIn:P.wIn, dIn:P.dIn, heightIn:P.heightIn,
+      wIn:(cfg&&cfg.dim&&cfg.dim.w)?cfg.dim.w:P.wIn,
+      dIn:(cfg&&cfg.dim&&cfg.dim.d)?cfg.dim.d:P.dIn,
+      heightIn:(cfg&&cfg.dim&&cfg.dim.h)?cfg.dim.h:P.heightIn,
+      sku:exactSku, order_sku:exactSku,                          // EXACT module order code for the sheet
       coverGrade:(sel.grade?gradeLabel(sel.grade):null),
       coverId:(sw?sw.id:null), coverName:(sw?(sw.cover+(sw.color?" "+sw.color:"")):null),
       coverHex:(sw?sw.hex:null), coverType:(sw?sw.type:null),
