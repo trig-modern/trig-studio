@@ -2599,7 +2599,7 @@ window.addEventListener("resize",()=>{ if(state.tab==="design"&&state.room) rend
     el("ptTab").innerHTML=h;
 
     var ep=el("ptEditProfile"); if(ep)ep.onclick=function(){ _tab="profile"; renderTab(); };
-    var qn=el("ptQNew"); if(qn)qn.onclick=function(){ if(state)state.editVig=null; closePortal(); if(window.enter)enter("design"); };
+    var qn=el("ptQNew"); if(qn)qn.onclick=function(){ if(state){ state.editVig=null; state.activeId=null; state.room=null; state.pieces=[]; state.sel=null; } closePortal(); if(window.enter)enter("design"); var _nrb=document.getElementById("newRoomBtn"); if(_nrb)_nrb.click(); };
     var qcl=el("ptQClient"); if(qcl)qcl.onclick=function(){ _tab="clients"; _openClient=null; renderTab(); setTimeout(function(){ var a=el("ptAddClient"); if(a)a.click(); },40); };
     var qc=el("ptQCat"); if(qc)qc.onclick=function(){ if(window.trigOpenDesignerCatalog)window.trigOpenDesignerCatalog(); }; var qb=el("ptQBoards"); if(qb)qb.onclick=function(){ openBoards(); }; var qq=el("ptQQuote"); if(qq)qq.onclick=function(){ if(window.trigStartQuote)window.trigStartQuote(); };
     var a0=el("ptAddCl0"); if(a0)a0.onclick=function(){ _tab="clients"; renderTab(); setTimeout(function(){ var a=el("ptAddClient"); if(a)a.click(); },40); };
@@ -3591,6 +3591,18 @@ window.TRIG_PRICING_V2 = true;
     try{ if(window.openPortal){ openPortal(); return; } }catch(e){}
     try{ if(window.showHome) showHome(); }catch(e){}
   }
+  /* TRIG-QUOTE-CFG: push a fully-configured spec (from the native configurator) straight into the
+   * active quote, preserving cover/sku/config detail. Mirrors quoteAddProduct's push shape but keeps
+   * the rich spec instead of rebuilding from CATALOG by id. Returns true on success. */
+  window.trigQuoteAddSpec=function(spec){ try{
+    if(!window._quoteBuild) return false;
+    if(!ST()) return false; if(!state.pieces) state.pieces=[];
+    state.pieces.push({id:'q'+Date.now().toString(36)+Math.floor(Math.random()*900+100),kind:'prop',spec:spec,x:1,y:1,rot:0});
+    saveQuote(); updateViewBtn();
+    try{ if(window.toast) toast("Added to quote — "+((spec&&spec.model)||"piece")); }catch(e){}
+    return true;
+  }catch(e){ return false; } };
+  window.trigInQuoteBuild=function(){ return !!window._quoteBuild; };
   window.trigStartQuote=startBlankQuote;
   window.trigOpenQuoteId=function(id){ var c=qsb(); if(!c)return; c.from("quotes").select("*").eq("id",id).single().then(function(r){ if(!r.error&&r.data){ try{ if(window.openPortal&&document.getElementById("portal")&&!document.getElementById("portal").classList.contains("gone")){} }catch(e){} openQuoteRow(r.data); } },function(){}); };
   window.trigToggleQuote=toggleQuoteView;
@@ -4223,7 +4235,7 @@ window.TRIG_PRICING_V2 = true;
     var net=row?row.net:null, retail=row?row.retail:null;
     var priceInner=(retail!=null?('<span class="yp">'+(net!=null?money(net):"Confirm")+'</span><span class="rt">retail '+money(retail)+'</span>'):'<span class="rt">Confirm with Trig</span>');
     if(INLINE){ html+='<div class="ncfg-priceline">'+priceInner+'</div>'; }
-    else { html+='<div class="ncfg-bar"><div class="ncfg-price">'+priceInner+'</div><button class="ncfg-add" id="ncfgAdd"'+(row?'':' disabled')+'>Add to room</button></div>'; }
+    else { var _addLbl=(window._quoteBuild?"Add to quote":"Add to room"); html+='<div class="ncfg-bar"><div class="ncfg-price">'+priceInner+'</div><button class="ncfg-add" id="ncfgAdd"'+(row?'':' disabled')+'>'+_addLbl+'</button></div>'; }
     host.innerHTML=html;
     // wire
     host.querySelectorAll(".ncfg-chip").forEach(function(b){ b.onclick=function(){ if(b.dataset.ax==="grade") SEL.swatchId=null; SEL[b.dataset.ax]=b.dataset.v; render(); }; });
@@ -4255,8 +4267,11 @@ window.TRIG_PRICING_V2 = true;
       config_key:row.config_key,
       opts:Object.assign({},OPTSEL)
     };
-    try{ if(window.onConfigured) window.onConfigured(spec); }catch(e){}
-    try{ if(window.trigLog) trigLog("configure",{app_id:P.id, meta:{config_key:row.config_key, native:1}}); }catch(e){}
+    // Context-aware routing: in a quote build, add to the ACTIVE QUOTE (not the room).
+    var _toQuote=false;
+    if(window._quoteBuild && window.trigQuoteAddSpec){ try{ _toQuote=window.trigQuoteAddSpec(spec); }catch(e){ _toQuote=false; } }
+    if(!_toQuote){ try{ if(window.onConfigured) window.onConfigured(spec); }catch(e){} }
+    try{ if(window.trigLog) trigLog("configure",{app_id:P.id, meta:{config_key:row.config_key, native:1, dest:(_toQuote?"quote":"room")}}); }catch(e){}
   }
 
   /* ---------- gate: wrap openConfigurator ---------- */
